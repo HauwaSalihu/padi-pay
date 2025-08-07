@@ -28,3 +28,7 @@ body {
   background-position: center;
   background-repeat: no-repeat;
 }
+
+.image-quality {
+  image-rendering: optimizeQuality;
+}

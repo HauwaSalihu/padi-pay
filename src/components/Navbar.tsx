@@ -28,11 +28,11 @@ const Navbar = () => {
         <div className="flex-shrink-0">
           <a href="#home">
               <Image
-            src="/logo.svg"
+            src="/logo.png"
             alt="Padi-Pay Logo"
-            width={280}
+            width={100}
             height={47}
-            className="object-contain"
+            className="object-contai"
           />
           </a>
         

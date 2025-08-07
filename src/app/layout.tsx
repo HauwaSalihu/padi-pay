@@ -44,6 +44,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <meta name="google-site-verification" content="pNM6Km2cMyTOkFx0BYzxok-yHASvNMOmL32KrmCJNjk" />
       <body
         className={`${satoshi.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
       >
