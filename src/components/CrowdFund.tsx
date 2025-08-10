@@ -52,7 +52,7 @@ function CrowdFund({}: Props) {
 
           <div className='w-full pl-0 md:pl-10 flex justify-center'>
             <Image
-              src="/medium-shot-black-woman-running-small-business 1.svg"
+              src="/bussiness.png"
               alt='crowdfunding'
               height={462}
               width={526}
@@ -63,7 +63,7 @@ function CrowdFund({}: Props) {
 
       <div className='flex flex-col md:flex-row items-center justify-between m-5 md:px-0 mt-16 gap-10'>
         <div className='flex justify-end px-30 w-full md:w-[50%]'>
-          <Image src="/crowd-img.svg" alt='img' height={100} width={200} />
+          <Image src="/crowd.png" alt='img' height={100} width={200} />
         </div>
         <div className='flex flex-col gap-5 w-full md:w-[50%]'>
           <h3 className='font-bold text-4xl tracking-[-1%] text-[#181B25]'>Support Vetted Businesses</h3>

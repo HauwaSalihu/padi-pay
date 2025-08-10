@@ -17,10 +17,10 @@ const Invest = (props: Props) => {
       {/* Images Section */}
       <div className="w-full md:w-[50%] h-[100%] hidden md:flex flex-row items-stretch relative justify-between gap-4 mt-10 md:mt-0">
         {/* First Image: align to top */}
-        <div className="flex flex-col justify-start absolute top-29 w-1/2">
+        <div className="flex flex-col justify-start absolute top-20 w-1/2">
           <div className="relative w-full h-[40vw] max-w-[328px] min-h-[180px] md:h-[350px] lg:h-[620px]"  >
             <Image
-              src="/Group 283.png"
+              src="/Group 298.png"
               alt="savings"
               fill
               className="object-contain img-fluid"
@@ -32,7 +32,7 @@ const Invest = (props: Props) => {
         <div className="flex flex-col justify-end absolute -bottom-[420px] left-40 w-1/2">
           <div className="relative w-full h-[40vw] max-h-[620px] min-h-[180px] md:h-[350px] lg:h-[620px]">
             <Image
-              src="/Group 284.png"
+              src="/Group 299.png"
               alt="savings"
               fill
               className="object-contain img-fluid"

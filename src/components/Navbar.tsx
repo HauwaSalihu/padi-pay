@@ -30,8 +30,8 @@ const Navbar = () => {
               <Image
             src="/logo.png"
             alt="Padi-Pay Logo"
-            width={100}
-            height={47}
+            width={300}
+            height={100}
             className="object-contai"
           />
           </a>

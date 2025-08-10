@@ -17,7 +17,7 @@ function Savings({}: Props) {
               <p className='font-normal text-lg text-[#2B303B]'>Lock your funds, save with disciple and earn interest on your savings</p>
             </div>
             <div className="flex justify-end w-full">
-              <Image src="/Group 284.svg" alt='fixed' width={250} height={250} className="object-contain max-w-full" />
+              <Image src="/Group 284.png" alt='fixed' width={250} height={250} className="object-contain max-w-full" />
             </div>
           </div>
           {/*  */}
@@ -27,7 +27,7 @@ function Savings({}: Props) {
               <p className='font-normal text-lg text-[#2B303B]'>Set your financial goals and reach them by saving daily, weekly, or monthly </p>
             </div>
             <div className="flex justify-end w-full">
-              <Image src="/Group 283.svg" alt='fixed' width={250} height={250} className="object-contain max-w-full" />
+              <Image src="/Group 283.png" alt='fixed' width={250} height={250} className="object-contain max-w-full" />
             </div>
           </div>
           {/*  */}
@@ -37,7 +37,7 @@ function Savings({}: Props) {
               <p className='font-normal text-lg text-[#2B303B]'>Turn your expenses into income by saving a percentage every time you spend</p>
             </div>
             <div className="flex justify-end w-full">
-              <Image src="/Group 289.svg" alt='fixed' width={250} height={250} className="object-contain max-w-full" />
+              <Image src="/Group 289.png" alt='fixed' width={250} height={250} className="object-contain max-w-full" />
             </div>
           </div>
         </div>

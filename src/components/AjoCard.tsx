@@ -65,7 +65,7 @@ function AjoCard({}: Props) {
                 <h2 className='font-bold text-xl tracking-[-1.5%] text-[#181B25] '>Create Your Own Group</h2>
                 <p className='font-medium text-[14px] tracking-[-0.6%] text-[#181B25] '>Start a new group and invite others with a simple link. Pick how often you want to contribute, daily, weekly, or monthly. and invite others to join with your link.</p>
             </div>
-            <Image src="/Group 293.svg" alt='group' height={375.81} width={180}/>
+            <Image src="/Group-1.png" alt='group' height={375.81} width={180}/>
         </div>
         {/*  */}
           <div className='border-t-2 bg-[#FFFFFF] m-5 md:m-0 flex flex-col gap-5 items-center border-r-2 border-l-2 border rounded-tl-2xl rounded-tr-2xl border-[#D0FBE9] p-5'>
@@ -73,7 +73,7 @@ function AjoCard({}: Props) {
                 <h2 className='font-bold text-xl tracking-[-1.5%] text-[#181B25] '>Join a Contribution Group</h2>
                 <p className='font-medium text-[14px] tracking-[-0.6%] text-[#181B25] '>Find a group contributing towards an amount you want and join, and when its your turn to pack, funds are paid directly to your wallet, fast and smooth.</p>
             </div>
-            <Image src="/Group 287.svg" alt='group' height={375.81} width={180}/>
+            <Image src="/Group 287.png" alt='group' height={375.81} width={180}/>
         </div>
         {/*  */}
           <div className='border-t-2 bg-[#FFFFFF] m-5 md:m-0 flex flex-col gap-5 items-center border-r-2 border-l-2 rounded-tl-2xl rounded-tr-2xl border border-[#D0FBE9] p-5'>
@@ -81,7 +81,7 @@ function AjoCard({}: Props) {
                 <h2 className='font-bold text-xl tracking-[-1.5%] text-[#181B25] '>Verified Members Only</h2>
                 <p className='font-medium text-[14px] tracking-[-0.6%] text-[#181B25] '>No funny stories. Everyone joining is verified. We check their income to be sure they can pay their contributions and ensure peace of mind for everyone.</p>
             </div>
-            <Image src="/Group 294.svg" alt='group' height={375.81} width={180}/>
+            <Image src="/Group 294.png" alt='group' height={375.81} width={180}/>
         </div>
         {/*  */}
           <div className='border-t-2 bg-[#FFFFFF] m-5 md:m-0 flex flex-col gap-5 items-center border-r-2 border-l-2 rounded-tl-2xl rounded-tr-2xl border border-[#D0FBE9] p-5'>
@@ -89,7 +89,7 @@ function AjoCard({}: Props) {
                 <h2 className='font-bold text-xl tracking-[-1.5%] text-[#181B25] '>Full Transparency</h2>
                 <p className='font-medium text-[14px] tracking-[-0.6%] text-[#181B25] '>You get to see who has paid, who’s next, and how much has gone in. There is no confusion as everyone in the group stays updated.</p>
             </div>
-            <Image src="/Group 292.svg" alt='group' height={375.81} width={180}/>
+            <Image src="/Group 292.png" alt='group' height={375.81} width={180}/>
         </div>
       </div>
     </section>

@@ -61,12 +61,12 @@ function Last({}: Props) {
       <div className="w-full md:w-1/2 relative flex justify-center items-end">
         <div className="relative w-full max-w-xs sm:max-w-sm md:max-w-sm lg:max-w-sm xl:max-w-sm">
           <Image
-            src="/Hero-img.png"
+            src="/hero.png"
             alt="Finance Image"
             width={600}
             height={600}
             priority
-            className="w-full h-auto object-contain md:absolute md:-bottom-24 lg:-bottom-32 md:-rotate-6"
+            className="w-full h-auto object-contain md:absolute md:-bottom-24 lg:-bottom-20 md:-rotate-6"
           />
         </div>
       </div>

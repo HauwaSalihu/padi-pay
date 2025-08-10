@@ -49,7 +49,7 @@ function AI({}: Props) {
 
             <div className='w-full md:w-[30%] bg-white px-16 pt-16 pb-0 rounded-3xl flex items-center justify-center h-[300px] md:h-[500px]'>
                 <Image
-                  src="/Group 303.svg"
+                  src="/Group 303.png"
                   alt='AI'
                   width={300}
                   height={500}

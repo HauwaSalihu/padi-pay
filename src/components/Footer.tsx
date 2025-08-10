@@ -6,7 +6,7 @@ type Props = {}
 function Footer({}: Props) {
   return (
     <footer className='flex flex-col gap-5 container mx-auto px-10 py-10 mt-10' id='footer'>
-      <Image src="/logo.png"  alt='logo' height={47} width={180} />
+      <Image src="/logo.png"  alt='logo' height={200} width={300} />
       <div className='flex flex-col md:flex-row justify-between gap-4 mt-6'>
         <p className='font-medium text-lg tracking-[-1.1%] text-[#2B303B]'>Digitizing Nigeria’s Traditional Savings Culture</p>
         <p className='font-medium text-lg tracking-[-1.1%] text-[#2B303B]'>© 2025 Padi-Pay. All rights reserved.</p>
