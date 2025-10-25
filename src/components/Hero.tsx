@@ -1,12 +1,44 @@
+'use client';
+
 import React from 'react'
 import Image from 'next/image'
 import { BiTransfer, BiLineChart, BiSolidGroup } from 'react-icons/bi';
 import { RiHandCoinFill } from 'react-icons/ri';
+import { notification } from 'antd';
+
 
 
 type Props = {}
 
 const Hero = (props: Props) => {
+    const [api, contextHolder] = notification.useNotification();
+
+const openNotification = (pauseOnHover: boolean) => () => {
+  api.open({
+    message: 'We’re Almost Ready 🚀',
+    description: (
+      <div className="space-y-3">
+        <p className="text-sm text-gray-700">
+          Our app is currently in the final stages of development. 
+          Be among the first to get exclusive early access when we launch!
+        </p>
+        <div>
+          <button
+            type="button"
+            className="bg-[#68123D] py-2.5 px-6 rounded-full font-semibold text-white hover:bg-[#4e0e2e] transition"
+            onClick={() =>
+              window.open('https://forms.gle/tMw4ekeeRNUYehub9', '_blank', 'noopener')
+            }
+          >
+            Join the Waitlist
+          </button>
+        </div>
+      </div>
+    ),
+    showProgress: true,
+    pauseOnHover,
+  });
+};
   return (
        <div className='flex md:mt-20 mt-10 flex-col items-center p-4' id='home'>
         <div className='lg:w-2xl'>
@@ -14,9 +46,14 @@ const Hero = (props: Props) => {
         <p className='font-medium text-xl tracking-[-1.5%] text-center'>Group savings, reimagined. Padi-Pay makes àjọ smarter — with AI insights, investments, crowdfunding, and seamless transfers.</p>
         </div> 
         
-            <div className="flex md:flex-row flex-col  gap-10 mt-10 items-center">
+            {/* buttons row: add relative z-20 so it's above decorative overlays */}
+            <div className="flex md:flex-row flex-col gap-10 mt-10 items-center relative z-20">
+      {contextHolder}
 
-             <button className="cursor-pointer">
+             <button
+               className="cursor-pointer"
+              onClick={openNotification(true)}
+             >
                 <div
                 className="flex max-w-48 h-12 px-3 gap-2 rounded-xl items-center justify-center bg-black text-white dark:text-black dark:bg-white sm:gap-3 sm:h-14"
                 >
@@ -35,7 +72,10 @@ const Hero = (props: Props) => {
                 </div>
             </button>
 
-            <button className="cursor-pointer">
+            <button
+              className="cursor-pointer"
+              onClick={openNotification(true)}
+            >
                 <div
                 className="flex max-w-48 h-12 px-3 gap-2 rounded-xl items-center justify-center bg-black text-white dark:text-black dark:bg-white sm:h-14"
                 >
@@ -140,7 +180,7 @@ const Hero = (props: Props) => {
     />
   </div>
 </div>
-<div className='w-fit object-contain hidden xl:block  overflow-x-hidden '>
+<div className='w-fit object-contain hidden xl:block overflow-x-hidden pointer-events-none'>
 
   {/* ✨ Make this absolute and position it */}
   <div className='lg:absolute top-0 left-0 w-full my-5 lg:my-0 flex justify-center'>

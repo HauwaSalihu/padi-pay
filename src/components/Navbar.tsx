@@ -48,7 +48,7 @@ const Navbar = () => {
         {/* CTA Button */}
         <div className="hidden md:flex">
           <button className="bg-[#68123D] py-2.5 px-6 rounded-full font-bold text-white hover:bg-[#4e0e2e] transition">
-            Join Our Waitlist
+            <a href="https://forms.gle/tMw4ekeeRNUYehub9" target='_blank'> Join Our Waitlist</a>
           </button>
         </div>
 

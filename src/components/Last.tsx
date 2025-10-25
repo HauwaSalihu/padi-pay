@@ -1,9 +1,39 @@
+"use client";
 import React from 'react'
 import Image from 'next/image'
+import { notification } from 'antd';
 
 type Props = {}
 
 function Last({}: Props) {
+      const [api, contextHolder] = notification.useNotification();
+
+const openNotification = (pauseOnHover: boolean) => () => {
+  api.open({
+    message: 'We’re Almost Ready 🚀',
+    description: (
+      <div className="space-y-3">
+        <p className="text-sm text-gray-700">
+          Our app is currently in the final stages of development. 
+          Be among the first to get exclusive early access when we launch!
+        </p>
+        <div>
+          <button
+            type="button"
+            className="bg-[#68123D] py-2.5 px-6 rounded-full font-semibold text-white hover:bg-[#4e0e2e] transition"
+            onClick={() =>
+              window.open('https://forms.gle/tMw4ekeeRNUYehub9', '_blank', 'noopener')
+            }
+          >
+            Join the Waitlist
+          </button>
+        </div>
+      </div>
+    ),
+    showProgress: true,
+    pauseOnHover,
+  });
+};
   return (
     <div className="relative container mx-auto mt-10 flex flex-col md:flex-row gap-10 rounded-2xl img-bg w-full px-6 md:px-10 py-16 overflow-hidden">
       
@@ -19,8 +49,9 @@ function Last({}: Props) {
 
         {/* Buttons aligned with text */}
         <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 pt-4">
+          {contextHolder}
           {/* App Store Button */}
-          <button className="cursor-pointer">
+          <button className="cursor-pointer" onClick={openNotification(true)}>
             <div className="flex w-44 h-12 sm:h-14 px-3 gap-2 rounded-xl items-center justify-center bg-black text-white">
               <svg viewBox="0 0 384 512" className="w-5 sm:w-7">
                 <path
@@ -38,7 +69,7 @@ function Last({}: Props) {
           </button>
 
           {/* Google Play Button */}
-          <button className="cursor-pointer">
+          <button className="cursor-pointer" onClick={openNotification(true)}>
             <div className="flex w-44 h-12 sm:h-14 px-3 gap-2 rounded-xl items-center justify-center bg-black text-white">
               <svg viewBox="30 336.7 120.9 129.2" className="w-5 sm:w-7">
                 <path d="M119.2,421.2c15.3-8.4,27-14.8,28-15.3c3.2-1.7,6.5-6.2,0-9.7c-2.1-1.1-13.4-7.3-28-15.3l-20.1,20.2L119.2,421.2z" fill="#FFD400" />
