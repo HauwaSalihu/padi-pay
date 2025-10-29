@@ -66,8 +66,8 @@ const Navbar = () => {
           <a href="#savings" className="hover:text-[#68123D]">Savings</a>
           <a href="#ai" className="hover:text-[#68123D]">AI Finance</a>
           <a href="#footer" className="hover:text-[#68123D]">Contact Us</a>
-          <button className="bg-[#68123D] mt-2 py-2 px-4 rounded-full font-bold text-white hover:bg-[#4e0e2e] transition">
-            Join Our Waitlist
+           <button className="bg-[#68123D] py-2.5 px-6 rounded-full font-bold text-white hover:bg-[#4e0e2e] transition">
+            <a href="https://forms.gle/tMw4ekeeRNUYehub9" target='_blank'> Join Our Waitlist</a>
           </button>
         </div>
       )}
