@@ -80,7 +80,21 @@ export const adminApi = baseApi.injectEndpoints({
       }),
       providesTags: ['AjoApplications'],
     }),
+    handleAjoApplication: builder.mutation<
+      any,
+      { memberId: string; approve: boolean }
+    >({
+      query: ({ memberId, approve }) => ({
+        url: `/admin-dashboard/ajo-applications/${memberId}`,
+        method: 'PATCH',
+        body: { approve },
+      }),
+      invalidatesTags: ['AjoApplications'],
+    }),
   }),
 });
 
-export const { useGetPendingAjoApplicationsQuery } = adminApi;
+export const { 
+  useGetPendingAjoApplicationsQuery,
+  useHandleAjoApplicationMutation 
+} = adminApi;

@@ -10,7 +10,7 @@ import {
   HiOutlineUsers,
   HiOutlineShieldCheck
 } from "react-icons/hi";
-import { useGetPendingAjoApplicationsQuery, AjoMemberApplication } from "@/services/padiApi/adminApi";
+import { useGetPendingAjoApplicationsQuery, AjoMemberApplication, useHandleAjoApplicationMutation } from "@/services/padiApi/adminApi";
 
 export default function AjoApplications() {
   const [page, setPage] = useState(1);
@@ -20,6 +20,22 @@ export default function AjoApplications() {
   const [isImgExpanded, setIsImgExpanded] = useState(false);
 
   const { data, isLoading, isError, refetch } = useGetPendingAjoApplicationsQuery({ page, limit });
+  const [handleAjoApplication, { isLoading: isMutating }] = useHandleAjoApplicationMutation();
+
+  const handleDecision = async (approve: boolean) => {
+    if (!sel) return;
+    const action = approve ? "approve" : "reject (permanently delete)";
+    if (!confirm(`Are you sure you want to ${action} this application?`)) {
+      return;
+    }
+    try {
+      await handleAjoApplication({ memberId: sel.id, approve }).unwrap();
+      closeDetails();
+    } catch (err: any) {
+      console.error(`Failed to handle application decision:`, err);
+      alert(err?.data?.message || `Failed to ${approve ? 'approve' : 'reject'} application. Please try again.`);
+    }
+  };
   const apps = data?.data || [];
   const meta = data?.meta || { page: 1, limit: 10, total: 0, totalPages: 0 };
 
@@ -497,26 +513,31 @@ export default function AjoApplications() {
             </div>
             </div>
 
-            {/* Footer containing stubs with Apple aesthetic */}
-            <div className="p-6 border-t border-gray-100/50 bg-white/30 backdrop-blur-md space-y-3">
-              <div className="flex gap-3">
-                <button 
-                  disabled 
-                  className="flex-1 bg-emerald-600/10 text-emerald-700 border border-emerald-200/50 py-3 rounded-2xl font-semibold text-sm cursor-not-allowed opacity-60 flex items-center justify-center gap-1.5"
-                >
-                  Approve Application
-                </button>
-                <button 
-                  disabled 
-                  className="flex-1 bg-rose-50/50 text-rose-600 border border-rose-100/50 py-3 rounded-2xl font-semibold text-sm cursor-not-allowed opacity-60 flex items-center justify-center gap-1.5"
-                >
-                  Reject
-                </button>
+            {/* Footer containing buttons with Apple aesthetic */}
+            <>
+            {isMutating ? 
+              <p className="text-xs text-gray-400 mt-0.5">Processsing Application</p>
+            :
+              <div className="p-6 border-t border-gray-100/50 bg-white/30 backdrop-blur-md">
+                <div className="flex gap-3">
+                  <button 
+                    onClick={() => handleDecision(true)}
+                    disabled={isMutating}
+                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 rounded-2xl font-semibold text-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer border-0 shadow-sm"
+                  >
+                    Approve Application
+                  </button>
+                  <button 
+                    onClick={() => handleDecision(false)}
+                    disabled={isMutating}
+                    className="flex-1 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 rounded-2xl font-semibold text-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer border-0 shadow-sm"
+                  >
+                    Reject
+                  </button>
+                </div>
               </div>
-              <p className="text-[10px] text-center text-gray-400 font-medium">
-                Approve and Reject operations are currently placeholder stubs for review flow.
-              </p>
-            </div>
+            }
+            </>
           </div>
         </>
       )}
