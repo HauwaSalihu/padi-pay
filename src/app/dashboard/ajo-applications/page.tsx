@@ -474,7 +474,7 @@ export default function AjoApplications() {
                         />
                       </div>
                       <div className="flex justify-between items-center text-xs">
-                        <span className="text-gray-400">Click preview to enlarge</span>
+                        <span className="text-gray-400">Click image to enlarge</span>
                         <a 
                           href={sel.bankStatementURL} 
                           target="_blank" 
