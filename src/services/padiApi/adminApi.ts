@@ -68,8 +68,27 @@ export interface PendingAjoApplicationsResponse {
   meta: PaginationMeta;
 }
 
+export interface AppStats {
+  signedUpUsers: number;
+  activeAjoGroups: number;
+  ajoGroupsWaitingActivation: number;
+  pendingUsers: number;
+}
+
+export interface AppStatsResponse {
+  status: string;
+  data: AppStats;
+}
+
 export const adminApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
+    getAppStats: builder.query<AppStatsResponse, void>({
+      query: () => ({
+        url: '/admin-dashboard/stats',
+        method: 'GET',
+      }),
+      providesTags: ['AjoApplications'],
+    }),
     getPendingAjoApplications: builder.query<
       PendingAjoApplicationsResponse,
       { page: number; limit: number }
@@ -96,5 +115,6 @@ export const adminApi = baseApi.injectEndpoints({
 
 export const { 
   useGetPendingAjoApplicationsQuery,
-  useHandleAjoApplicationMutation 
+  useHandleAjoApplicationMutation,
+  useGetAppStatsQuery,
 } = adminApi;

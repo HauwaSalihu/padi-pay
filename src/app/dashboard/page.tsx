@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useGetProfileQuery } from "@/services/padiApi/userApi";
+import { useGetAppStatsQuery } from "@/services/padiApi/adminApi";
 import {
   HiOutlineUsers,
   HiOutlineFolder,
@@ -11,28 +12,34 @@ import {
 
 export default function Dashboard() {
   const { data } = useGetProfileQuery();
+  const { data: statsData, isLoading: statsLoading } = useGetAppStatsQuery();
   const user = data?.user;
   const firstName = user?.first_name || "Admin";
+
+  const appStats = statsData?.data;
 
   const stats = [
     {
       title: "User Count",
-      value: "1,248",
-      // change: "+12% from last month",
+      value: statsLoading ? "..." : (appStats?.signedUpUsers ?? 0).toLocaleString(),
       icon: HiOutlineUsers,
       color: "text-blue-600 bg-blue-50",
     },
     {
       title: "Active Ajo Groups",
-      value: "84",
-      // change: "+4% from last week",
+      value: statsLoading ? "..." : (appStats?.activeAjoGroups ?? 0).toLocaleString(),
       icon: HiOutlineFolder,
       color: "text-purple-600 bg-purple-50",
     },
     {
+      title: "Ajo Groups Waiting Activation",
+      value: statsLoading ? "..." : (appStats?.ajoGroupsWaitingActivation ?? 0).toLocaleString(),
+      icon: HiOutlineTrendingUp,
+      color: "text-teal-600 bg-teal-50",
+    },
+    {
       title: "Pending Applications",
-      value: "18",
-      // change: "Needs review",
+      value: statsLoading ? "..." : (appStats?.pendingUsers ?? 0).toLocaleString(),
       icon: HiOutlineClipboardCheck,
       color: "text-amber-600 bg-amber-50",
     },
@@ -70,10 +77,9 @@ export default function Dashboard() {
                   <stat.icon size={22} />
                 </div>
               </div>
-              {/* <div className="mt-4">
+              <div className="mt-4">
                 <h3 className="text-2xl font-bold text-[#181B25] tracking-tight">{stat.value}</h3>
-                <p className="text-xs text-[#8A94A6] mt-1 font-medium">{stat.change}</p>
-              </div> */}
+              </div>
             </div>
           ))}
         </div>
