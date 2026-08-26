@@ -1,0 +1,86 @@
+import { baseApi } from './baseApi';
+
+export interface AjoGroup {
+  id: string;
+  name: string;
+  description?: string | null;
+  imageUrl?: string | null;
+  status: string;
+  privacy: string;
+  requiresApproval: boolean;
+  inviteCode?: string | null;
+  groupSize: number;
+  contributionAmount: number;
+  frequency: 'DAILY' | 'WEEKLY' | 'MONTHLY';
+  contributionSchedule: string;
+  totalCycles: number;
+  targetAmount: number;
+  adminId: string;
+  createdAt: string;
+  updatedAt: string;
+  admin?: {
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone: string;
+  };
+}
+
+export interface AjoMemberApplication {
+  id: string;
+  ajoId: string;
+  userId: string;
+  hands?: number | null;
+  contributionAmount?: number | null;
+  status: 'PENDING' | 'ACTIVE' | 'LEFT' | 'REMOVED';
+  linkedAccountId?: string | null;
+  linkedAccountType: 'BUSINESS' | 'SALARY';
+  bankStatementURL: string;
+  businessName?: string | null;
+  cacNumber?: string | null;
+  totalContributionPaid?: number | null;
+  totalRounds?: number | null;
+  totalRoundsPaid?: number | null;
+  createdAt: string;
+  updatedAt: string;
+  ajo: AjoGroup;
+  user: {
+    id: string;
+    first_name: string;
+    middle_name: string;
+    last_name: string;
+    email: string;
+    phone: string;
+    gender?: 'MALE' | 'FEMALE' | null;
+    date_of_birth?: string | null;
+  };
+}
+
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface PendingAjoApplicationsResponse {
+  data: AjoMemberApplication[];
+  meta: PaginationMeta;
+}
+
+export const adminApi = baseApi.injectEndpoints({
+  endpoints: (builder) => ({
+    getPendingAjoApplications: builder.query<
+      PendingAjoApplicationsResponse,
+      { page: number; limit: number }
+    >({
+      query: ({ page, limit }) => ({
+        url: `/admin-dashboard/ajo-applications?page=${page}&limit=${limit}`,
+        method: 'GET',
+      }),
+      providesTags: ['AjoApplications'],
+    }),
+  }),
+});
+
+export const { useGetPendingAjoApplicationsQuery } = adminApi;
