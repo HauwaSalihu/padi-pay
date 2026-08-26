@@ -18,16 +18,13 @@ export default function AjoApplications() {
   const [query, setQuery] = useState("");
   const [sel, setSel] = useState<AjoMemberApplication | null>(null);
   const [isImgExpanded, setIsImgExpanded] = useState(false);
+  const [confirmMode, setConfirmMode] = useState<'approve' | 'reject' | null>(null);
 
   const { data, isLoading, isError, refetch } = useGetPendingAjoApplicationsQuery({ page, limit });
   const [handleAjoApplication, { isLoading: isMutating }] = useHandleAjoApplicationMutation();
 
   const handleDecision = async (approve: boolean) => {
     if (!sel) return;
-    const action = approve ? "approve" : "reject (permanently delete)";
-    if (!confirm(`Are you sure you want to ${action} this application?`)) {
-      return;
-    }
     try {
       await handleAjoApplication({ memberId: sel.id, approve }).unwrap();
       closeDetails();
@@ -57,6 +54,7 @@ export default function AjoApplications() {
   const closeDetails = () => {
     setSel(null);
     setIsImgExpanded(false);
+    setConfirmMode(null);
   };
 
   return (
@@ -514,30 +512,69 @@ export default function AjoApplications() {
             </div>
 
             {/* Footer containing buttons with Apple aesthetic */}
-            <>
-            {isMutating ? 
-              <p className="text-xs text-gray-400 mt-0.5">Processsing Application</p>
-            :
-              <div className="p-6 border-t border-gray-100/50 bg-white/30 backdrop-blur-md">
+            <div className="p-6 border-t border-gray-100/50 bg-white/30 backdrop-blur-md">
+              {isMutating ? (
+                <div className="flex items-center justify-center py-2">
+                  <div className="w-5 h-5 rounded-full border-2 border-neutral-200 border-t-[#68123D] animate-spin mr-2" />
+                  <span className="text-xs text-gray-500 font-semibold">Processing application decision...</span>
+                </div>
+              ) : confirmMode === 'approve' ? (
+                <div className="space-y-3.5 text-center">
+                  <p className="text-xs font-medium text-gray-500">
+                    Are you sure you want to <strong className="text-emerald-700 font-semibold">approve</strong> this application? The member will be set as <strong className="text-emerald-700 font-semibold">ACTIVE</strong>.
+                  </p>
+                  <div className="flex gap-3">
+                    <button 
+                      onClick={() => setConfirmMode(null)}
+                      className="flex-1 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-700 py-3 rounded-2xl font-semibold text-sm transition-all cursor-pointer border-0 shadow-sm"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={() => handleDecision(true)}
+                      className="flex-1 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white py-3 rounded-2xl font-semibold text-sm transition-all cursor-pointer border-0 shadow-sm"
+                    >
+                      Confirm Approve
+                    </button>
+                  </div>
+                </div>
+              ) : confirmMode === 'reject' ? (
+                <div className="space-y-3.5 text-center">
+                  <p className="text-xs font-medium text-gray-500">
+                    Are you sure you want to <strong className="text-rose-700 font-semibold">reject</strong> this application? This will <strong className="text-rose-700 font-semibold">permanently delete</strong> the record.
+                  </p>
+                  <div className="flex gap-3">
+                    <button 
+                      onClick={() => setConfirmMode(null)}
+                      className="flex-1 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-700 py-3 rounded-2xl font-semibold text-sm transition-all cursor-pointer border-0 shadow-sm"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={() => handleDecision(false)}
+                      className="flex-1 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white py-3 rounded-2xl font-semibold text-sm transition-all cursor-pointer border-0 shadow-sm"
+                    >
+                      Confirm Reject
+                    </button>
+                  </div>
+                </div>
+              ) : (
                 <div className="flex gap-3">
                   <button 
-                    onClick={() => handleDecision(true)}
-                    disabled={isMutating}
-                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 rounded-2xl font-semibold text-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer border-0 shadow-sm"
+                    onClick={() => setConfirmMode('approve')}
+                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white py-3 rounded-2xl font-semibold text-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer border-0 shadow-sm"
                   >
                     Approve Application
                   </button>
                   <button 
-                    onClick={() => handleDecision(false)}
-                    disabled={isMutating}
-                    className="flex-1 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 rounded-2xl font-semibold text-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer border-0 shadow-sm"
+                    onClick={() => setConfirmMode('reject')}
+                    className="flex-1 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white py-3 rounded-2xl font-semibold text-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer border-0 shadow-sm"
                   >
                     Reject
                   </button>
                 </div>
-              </div>
-            }
-            </>
+              )}
+            </div>
           </div>
         </>
       )}
