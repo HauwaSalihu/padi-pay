@@ -16,23 +16,23 @@ export default function Dashboard() {
 
   const stats = [
     {
-      title: "Active Users",
+      title: "User Count",
       value: "1,248",
-      change: "+12% from last month",
+      // change: "+12% from last month",
       icon: HiOutlineUsers,
       color: "text-blue-600 bg-blue-50",
     },
     {
       title: "Active Ajo Groups",
       value: "84",
-      change: "+4% from last week",
+      // change: "+4% from last week",
       icon: HiOutlineFolder,
       color: "text-purple-600 bg-purple-50",
     },
     {
       title: "Pending Applications",
       value: "18",
-      change: "Needs review",
+      // change: "Needs review",
       icon: HiOutlineClipboardCheck,
       color: "text-amber-600 bg-amber-50",
     },
@@ -70,17 +70,17 @@ export default function Dashboard() {
                   <stat.icon size={22} />
                 </div>
               </div>
-              <div className="mt-4">
+              {/* <div className="mt-4">
                 <h3 className="text-2xl font-bold text-[#181B25] tracking-tight">{stat.value}</h3>
                 <p className="text-xs text-[#8A94A6] mt-1 font-medium">{stat.change}</p>
-              </div>
+              </div> */}
             </div>
           ))}
         </div>
       </div>
 
       {/* Quick Activity Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-2xl border border-[#E1E4EA] lg:col-span-2">
           <h3 className="text-base font-bold text-[#181B25] mb-4">Recent Activity Logs</h3>
           <div className="space-y-4">
@@ -121,7 +121,7 @@ export default function Dashboard() {
             ))}
           </div>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }
