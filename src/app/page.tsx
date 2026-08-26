@@ -11,20 +11,8 @@ import Footer from "@/components/Footer";
 
 export default function Home() {
   return (
-    <div className="bg-[linear-gradient(180deg,_#FFCCE5_10%,_#FFF2F9_0%,_#FFFFFF_0%)] pt-[20px]">
-      {/* Navbar OUTSIDE the gradient wrapper */}
-      <Navbar />
-      <div className="bg-[linear-gradient(180deg,_#FFCCE5_0%,_#FFF2F9_50%,_#FFFFFF_100%)] pt-[10px]">
-        <Hero />
-      </div>
-      <Certifcate />
-      <AjoCard />
-      <Savings />
-      <CrowdFund />
-      <Invest />
-      <AI />
-      <Last />
-      <Footer />
+    <div className="w-screen h-screen bg-[linear-gradient(180deg,_#FFCCE5_10%,_#FFF2F9_0%,_#FFFFFF_0%)] pt-[20px]">
+      
     </div>
   );
 }
