@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AntdRegistry } from '@ant-design/nextjs-registry';
 import localFont from "next/font/local";
+import ReduxProvider from "@/providers/ReduxProvider";
 
 
 const satoshi = localFont({
@@ -49,11 +50,16 @@ export default function RootLayout({
         className={`${satoshi.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
       >
       
-   <AntdRegistry>{children}</AntdRegistry>
+   <AntdRegistry>
+     <ReduxProvider>
+       {children}
+     </ReduxProvider>
+   </AntdRegistry>
       </body>
     </html>
   );
 }
+
 
 
 
