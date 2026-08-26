@@ -3,16 +3,19 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useGetProfileQuery } from '../services/padiApi/userApi';
+import { useLogoutMutation } from '../services/padiApi/authApi';
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { data, isLoading, isError } = useGetProfileQuery();
-
+  const [logout] = useLogoutMutation();
+  
   useEffect(() => {
-    if (!isLoading && (isError || !data)) {
+    if (!isLoading && (isError || !data || data?.user?.isPadipayAdmin !== true)) {
+      logout().unwrap().catch((err) => console.error("Auto logout failed:", err));
       router.replace('/login');
     }
-  }, [isLoading, isError, data, router]);
+  }, [isLoading, isError, data, router, logout]);
 
   if (isLoading) {
     return (
@@ -23,9 +26,9 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         </div>
       </div>
     );
-  }
+  };
 
-  if (isError || !data) {
+  if (isError || !data || data?.user?.isPadipayAdmin !== true) {
     return null;
   };
 

@@ -13,6 +13,7 @@ export interface User {
   isPhoneVerified?: boolean;
   isBvnVerified?: boolean;
   isIdentityVerified?: boolean;
+  isPadipayAdmin?: boolean;
 }
 
 export interface LoginRequest {
