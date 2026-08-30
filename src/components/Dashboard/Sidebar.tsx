@@ -8,6 +8,7 @@ import {
   HiOutlineClipboardList,
   HiOutlineLogout,
   HiOutlineX,
+  HiOutlineCog,
 } from "react-icons/hi";
 import { useGetProfileQuery } from "@/services/padiApi/userApi";
 import { useLogoutMutation } from "@/services/padiApi/authApi";
@@ -82,7 +83,8 @@ export default function Sidebar({ onClose }: SidebarProps) {
         {navItems.map((item) => {
           const isActive =
             pathname === item.href ||
-            (item.href !== "/dashboard" && pathname.startsWith(item.href + "/"));
+            (item.href !== "/dashboard" &&
+              pathname.startsWith(item.href + "/"));
 
           return (
             <Link
@@ -105,8 +107,16 @@ export default function Sidebar({ onClose }: SidebarProps) {
         })}
       </nav>
 
-      {/* User profile & Logout */}
+      {/* User profile, Logout & Settings */}
       <div className="p-4 border-t border-[#E1E4EA] bg-gray-50/50 flex-shrink-0">
+        <Link
+          href="/dashboard/settings"
+          onClick={onClose}
+          className="flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 text-[#68123D] hover:bg-gray-50 hover:text-[#181B25] mb-4"
+        >
+          <HiOutlineCog size={20} />
+          <span className="text-[#68123D]">Settings</span>
+        </Link>
         <div className="flex items-center gap-3 mb-4 px-2">
           <div className="w-10 h-10 rounded-full bg-[#68123D]/10 text-[#68123D] flex items-center justify-center font-bold text-sm border border-[#68123D]/20 flex-shrink-0">
             {initials || "AD"}
@@ -127,7 +137,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
             <span className="w-4 h-4 border-2 border-red-500/30 border-t-red-500 rounded-full animate-spin"></span>
           ) : (
             <>
-              <HiOutlineLogout size={18} />
+              <HiOutlineLogout size={20} />
               <span>Log Out</span>
             </>
           )}
