@@ -11,6 +11,7 @@ interface MobileHeaderProps {
 export default function MobileHeader({ onMenuClick }: MobileHeaderProps) {
   const { data } = useGetProfileQuery();
   const user = data?.user;
+  // console.log("User data in MobileHeader:", user);
   const initials = user
     ? `${user.first_name?.[0] || ""}${user.last_name?.[0] || ""}`.toUpperCase()
     : "AD";
