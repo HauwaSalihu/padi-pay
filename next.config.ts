@@ -3,7 +3,7 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'https://padi-pay-backend.onrender.com/:path*',
+        destination: 'https://padi-pay-backend-production.up.railway.app/:path*',
       },
     ];
   },
