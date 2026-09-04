@@ -95,6 +95,22 @@ export interface SearchUsersResponse {
   data: AdminUser[];
 }
 
+export interface User {
+  id: string;
+  first_name: string;
+  middle_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  isPadipayAdmin: boolean;
+  is_active: boolean;
+}
+
+export interface UsersResponse {
+  data: User[];
+  meta: PaginationMeta;
+}
+
 export const adminApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getAppStats: builder.query<AppStatsResponse, void>({
@@ -135,7 +151,7 @@ export const adminApi = baseApi.injectEndpoints({
       }),
     }),
 
-   makeUserAdmin: builder.mutation<
+    makeUserAdmin: builder.mutation<
       {
         message: string;
         data: AdminUser;
@@ -147,6 +163,41 @@ export const adminApi = baseApi.injectEndpoints({
         method: "PUT",
       }),
     }),
+
+    removeUserAsAdmin: builder.mutation<
+      {
+        message: string;
+        data: AdminUser;
+      },
+      { userId: string }
+    >({
+      query: ({ userId }) => ({
+        url: `/admin-dashboard/users/${userId}/remove-admin`,
+        method: "PUT",
+      }),
+    }),
+
+    getUsers: builder.query<UsersResponse, { page?: number; limit?: number }>({
+      query: ({ page = 1, limit = 10 }) => ({
+        url: `/admin-dashboard/users?page=${page}&limit=${limit}`,
+        method: "GET",
+      }),
+      providesTags: ["AjoApplications"],
+    }),
+
+    getAjoGroups: builder.query<
+      {
+        data: AjoGroup[];
+        meta: PaginationMeta;
+      },
+      { page?: number; limit?: number }
+    >({
+      query: ({ page = 1, limit = 10 }) => ({
+        url: `/admin-dashboard/ajo-groups?page=${page}&limit=${limit}`,
+        method: "GET",
+      }),
+      providesTags: ["AjoGroups"],
+    }),
   }),
 });
 
@@ -156,4 +207,7 @@ export const {
   useGetAppStatsQuery,
   useSearchUsersQuery,
   useMakeUserAdminMutation,
+  useRemoveUserAsAdminMutation,
+  useGetUsersQuery,
+  useGetAjoGroupsQuery,
 } = adminApi;

@@ -36,7 +36,7 @@ const baseQueryWithReauth: BaseQueryFn<
 export const baseApi = createApi({
   reducerPath: 'padiApi',
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['User', 'AjoApplications'],
+  tagTypes: ['User', 'AjoApplications', 'AjoGroups'],
   endpoints: () => ({}),
 });
 

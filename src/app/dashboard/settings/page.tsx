@@ -11,6 +11,7 @@ import {
 import {
   useSearchUsersQuery,
   useMakeUserAdminMutation,
+  useRemoveUserAsAdminMutation,
   AdminUser,
 } from "@/services/padiApi/adminApi";
 
@@ -32,6 +33,9 @@ export default function AdminSettings() {
 
   const [makeUserAdmin, { isLoading: isMakingAdmin }] =
     useMakeUserAdminMutation();
+
+  const [removeUserAsAdmin, { isLoading: isRemovingAdmin }] =
+    useRemoveUserAsAdminMutation();
 
   const users = data?.data || [];
 
@@ -78,6 +82,42 @@ export default function AdminSettings() {
         text:
           error?.data?.message ||
           "Failed to make user an admin. Please try again.",
+      });
+
+      setTimeout(() => {
+        setAdminMessage(null);
+      }, 4000);
+    }
+  };
+
+  const RemoveAsAdmin = async () => {
+    if (!confirmUser) return;
+
+    try {
+      const response = await removeUserAsAdmin({
+        userId: confirmUser.id,
+      }).unwrap();
+
+      setConfirmUser(null);
+
+      setAdminMessage({
+        type: "success",
+        text: response?.message || "User successfully made a PadiPay User.",
+      });
+
+      refetch();
+
+      setTimeout(() => {
+        setAdminMessage(null);
+      }, 4000);
+    } catch (error: any) {
+      console.error("Failed to make admin an user:", error);
+
+      setAdminMessage({
+        type: "error",
+        text:
+          error?.data?.message ||
+          "Failed to make admin an user. Please try again.",
       });
 
       setTimeout(() => {
@@ -312,9 +352,13 @@ export default function AdminSettings() {
                         {/* Action */}
                         <td className="py-4.5 px-6 text-right">
                           {isAdmin ? (
-                            <span className="text-xs font-medium text-gray-400">
-                              Already an administrator
-                            </span>
+                            <button
+                              onClick={() => setConfirmUser(user)}
+                              className="px-4 py-2 rounded-xl text-xs font-semibold bg-neutral-900 text-white hover:bg-neutral-800 active:bg-neutral-950 transition-all shadow-sm inline-flex items-center gap-1.5 cursor-pointer border-0"
+                            >
+                              <HiOutlineUser size={14} />
+                              Remove As Admin
+                            </button>
                           ) : (
                             <button
                               onClick={() => setConfirmUser(user)}
@@ -392,9 +436,13 @@ export default function AdminSettings() {
                     {/* Action */}
                     <div className="flex justify-end pt-1">
                       {isAdmin ? (
-                        <span className="text-xs font-medium text-gray-400">
-                          Already an administrator
-                        </span>
+                        <button
+                          onClick={() => setConfirmUser(user)}
+                          className="w-full px-4 py-2.5 rounded-xl text-xs font-semibold bg-neutral-900 text-white hover:bg-neutral-800 active:bg-neutral-950 transition-all shadow-sm inline-flex items-center justify-center gap-1.5 cursor-pointer"
+                        >
+                          <HiOutlineUser size={14} />
+                          Remove As Admin
+                        </button>
                       ) : (
                         <button
                           onClick={() => setConfirmUser(user)}
@@ -439,11 +487,15 @@ export default function AdminSettings() {
             <div className="flex justify-between items-center border-b border-gray-100/50 p-6">
               <div className="space-y-1">
                 <h2 className="text-xl font-semibold tracking-tight text-gray-900">
-                  Grant Administrator Access
+                  {confirmUser?.isPadipayAdmin
+                    ? "Remove Administrator Access"
+                    : "Grant Administrator Access"}
                 </h2>
 
                 <p className="text-xs text-gray-400">
-                  Review the user before granting elevated privileges.
+                  {confirmUser?.isPadipayAdmin
+                    ? "Review the administrator before removing their elevated privileges."
+                    : "Review the user before granting elevated privileges."}
                 </p>
               </div>
 
@@ -471,8 +523,7 @@ export default function AdminSettings() {
 
                     <p className="text-xs text-amber-700/80 mt-1.5 leading-relaxed">
                       Administrator access gives this user elevated permissions
-                      to manage the platform. Only grant this access to trusted
-                      users.
+                      to manage the platform.
                     </p>
                   </div>
                 </div>
@@ -520,26 +571,39 @@ export default function AdminSettings() {
               </div>
 
               {/* Confirmation Text */}
-              <div className="text-center px-4">
-                <p className="text-xs font-medium text-gray-500 leading-relaxed">
-                  Are you sure you want to make{" "}
-                  <strong className="text-gray-800">
-                    {confirmUser.first_name} {confirmUser.last_name}
-                  </strong>{" "}
-                  an administrator? This will give them access to administrative
-                  features and controls.
-                </p>
-              </div>
+              <p className="text-xs font-medium text-gray-500 leading-relaxed">
+                {confirmUser?.isPadipayAdmin ? (
+                  <>
+                    Are you sure you want to remove administrator access from{" "}
+                    <strong className="text-gray-800">
+                      {confirmUser.first_name} {confirmUser.last_name}
+                    </strong>
+                    ? They will no longer have access to administrative features
+                    and controls.
+                  </>
+                ) : (
+                  <>
+                    Are you sure you want to make{" "}
+                    <strong className="text-gray-800">
+                      {confirmUser.first_name} {confirmUser.last_name}
+                    </strong>{" "}
+                    an administrator? This will give them access to
+                    administrative features and controls.
+                  </>
+                )}
+              </p>
             </div>
 
             {/* Footer */}
             <div className="p-4 sm:p-6 border-t border-gray-100/50 bg-white/30 backdrop-blur-md">
-              {isMakingAdmin ? (
+              {isMakingAdmin || isRemovingAdmin ? (
                 <div className="flex items-center justify-center py-2">
                   <div className="w-5 h-5 rounded-full border-2 border-neutral-200 border-t-[#68123D] animate-spin mr-2 shrink-0" />
 
                   <span className="text-xs sm:text-sm text-gray-500 font-semibold text-center">
-                    Granting administrator access...
+                    {confirmUser?.isPadipayAdmin
+                      ? "Removing administrator access..."
+                      : "Granting administrator access..."}
                   </span>
                 </div>
               ) : (
@@ -551,12 +615,21 @@ export default function AdminSettings() {
                     Cancel
                   </button>
 
-                  <button
-                    onClick={handleMakeAdmin}
-                    className="w-full sm:flex-1 bg-[#68123D] hover:bg-[#68123D]/90 active:bg-[#68123D] text-white py-3 sm:py-3.5 rounded-2xl font-semibold text-sm transition-all cursor-pointer border-0 shadow-sm"
-                  >
-                    Confirm & Make Admin
-                  </button>
+                  {confirmUser?.isPadipayAdmin ? (
+                    <button
+                      onClick={RemoveAsAdmin}
+                      className="w-full sm:flex-1 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white py-3 sm:py-3.5 rounded-2xl font-semibold text-sm transition-all cursor-pointer border-0 shadow-sm"
+                    >
+                      Confirm & Remove Admin
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleMakeAdmin}
+                      className="w-full sm:flex-1 bg-[#68123D] hover:bg-[#68123D]/90 active:bg-[#68123D] text-white py-3 sm:py-3.5 rounded-2xl font-semibold text-sm transition-all cursor-pointer border-0 shadow-sm"
+                    >
+                      Confirm & Make Admin
+                    </button>
+                  )}
                 </div>
               )}
             </div>

@@ -5,10 +5,13 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   HiOutlineHome,
-  HiOutlineClipboardList,
+  HiOutlineClipboardCheck,
   HiOutlineLogout,
   HiOutlineX,
   HiOutlineCog,
+  HiOutlineUserGroup,
+  HiOutlineCollection,
+  HiOutlineClock,
 } from "react-icons/hi";
 import { useGetProfileQuery } from "@/services/padiApi/userApi";
 import { useLogoutMutation } from "@/services/padiApi/authApi";
@@ -46,17 +49,37 @@ export default function Sidebar({ onClose }: SidebarProps) {
   };
 
   const navItems = [
-    {
-      href: "/dashboard",
-      label: "Dashboard",
-      icon: HiOutlineHome,
-    },
-    {
-      href: "/dashboard/ajo-applications",
-      label: "Ajo Applications",
-      icon: HiOutlineClipboardList,
-    },
-  ];
+  {
+    href: "/dashboard",
+    label: "Dashboard",
+    icon: HiOutlineHome,
+  },
+  {
+    href: "/dashboard/users",
+    label: "Users",
+    icon: HiOutlineUserGroup,
+  },
+  {
+    href: "/dashboard/ajo-groups",
+    label: "Ajo Groups",
+    icon: HiOutlineCollection,
+  },
+  {
+    href: "/dashboard/ajo-applications",
+    label: "Ajo Applications",
+    icon: HiOutlineClipboardCheck,
+  },
+  {
+    href: "/dashboard/pending-applications",
+    label: "Pending Applications",
+    icon: HiOutlineClock,
+  },
+  {
+    href: "/dashboard/transactions",
+    label: "Transactions",
+    icon: HiOutlineClipboardCheck,
+  },
+];
 
   return (
     <div className="flex flex-col h-full bg-white">
