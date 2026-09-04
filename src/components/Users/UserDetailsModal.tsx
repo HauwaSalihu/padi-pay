@@ -22,6 +22,7 @@ export default function UserDetailsModal({ userId, onClose }: UserDetailsModalPr
   const { data: user, isLoading, isError, refetch } = useGetUserDetailsQuery(userId!, {
     skip: !userId,
   });
+  console.log('user', user);
 
   if (!userId) return null;
 

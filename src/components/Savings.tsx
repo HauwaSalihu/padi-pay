@@ -14,7 +14,7 @@ function Savings({}: Props) {
           <div className='bg-[#F0F7FF] border-[#F5F7FA] flex flex-col gap-5 border rounded-2xl px-5 pt-5 pb-0 relative'>
             <div className='flex flex-col gap-6'>
               <h2 className='font-bold text-3xl tracking-[-0.5%] text-[#181B25]'>Fixed Savings</h2>
-              <p className='font-normal text-lg text-[#2B303B]'>Lock your funds, save with disciple and earn interest on your savings</p>
+              <p className='font-normal text-lg text-[#2B303B]'>Lock your funds, save with padipay and earn interest on your savings</p>
             </div>
             <div className="flex justify-end w-full">
               <Image src="/Group 284.png" alt='fixed' width={250} height={250} className="object-contain max-w-full" />
