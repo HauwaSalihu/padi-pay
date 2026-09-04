@@ -9,14 +9,14 @@ import {
   HiOutlineChevronRight,
   HiOutlineExternalLink,
 } from "react-icons/hi";
-import { useGetUsersQuery, type AdminUser } from "@/services/padiApi/adminApi";
+import { useGetUsersQuery } from "@/services/padiApi/adminApi";
 import UserDetailsModal from "./UserDetailsModal";
 
 export default function Users() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [query, setQuery] = useState("");
-  const [selected, setSelected] = useState<AdminUser | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const { data, isLoading, isError, refetch } = useGetUsersQuery({ page, limit });
 
@@ -186,7 +186,7 @@ export default function Users() {
                       </td>
                       <td className="py-4.5 px-6 text-right">
                         <button
-                          onClick={() => setSelected(u)}
+                          onClick={() => setSelectedId(u.id)}
                           className="px-4 py-2 rounded-xl text-xs font-semibold bg-neutral-900 text-white hover:bg-neutral-800 active:bg-neutral-950 transition-all shadow-sm inline-flex items-center gap-1.5 cursor-pointer border-0"
                         >
                           View Details
@@ -274,7 +274,7 @@ export default function Users() {
                     Registered
                   </span>
                   <button
-                    onClick={() => setSelected(u)}
+                    onClick={() => setSelectedId(u.id)}
                     className="px-4 py-2 rounded-xl text-xs font-semibold bg-neutral-900 text-white hover:bg-neutral-800 active:bg-neutral-950 transition-all shadow-sm inline-flex items-center gap-1.5 cursor-pointer border-0"
                   >
                     View Details
@@ -310,7 +310,7 @@ export default function Users() {
       )}
 
       {/* User details modal */}
-      <UserDetailsModal user={selected} onClose={() => setSelected(null)} />
+      <UserDetailsModal userId={selectedId} onClose={() => setSelectedId(null)} />
     </div>
   );
 }
