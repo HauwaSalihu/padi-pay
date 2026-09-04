@@ -7,13 +7,16 @@ import {
   HiOutlineUsers,
   HiOutlineChevronLeft,
   HiOutlineChevronRight,
+  HiOutlineExternalLink,
 } from "react-icons/hi";
-import { useGetUsersQuery } from "@/services/padiApi/adminApi";
+import { useGetUsersQuery, type AdminUser } from "@/services/padiApi/adminApi";
+import UserDetailsModal from "./UserDetailsModal";
 
 export default function Users() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [query, setQuery] = useState("");
+  const [selected, setSelected] = useState<AdminUser | null>(null);
 
   const { data, isLoading, isError, refetch } = useGetUsersQuery({ page, limit });
 
@@ -152,6 +155,7 @@ export default function Users() {
                     <th className="py-4.5 px-6 font-medium">Email Address</th>
                     <th className="py-4.5 px-6 font-medium">Phone Number</th>
                     <th className="py-4.5 px-6 font-medium">Date Created</th>
+                    <th className="py-4.5 px-6 font-medium text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100/30 text-sm">
@@ -179,6 +183,15 @@ export default function Users() {
                       <td className="py-4.5 px-6 text-gray-600">{u.phone}</td>
                       <td className="py-4.5 px-6">
                         <span className="text-sm text-gray-600">{fmtDate(u.date_created)}</span>
+                      </td>
+                      <td className="py-4.5 px-6 text-right">
+                        <button
+                          onClick={() => setSelected(u)}
+                          className="px-4 py-2 rounded-xl text-xs font-semibold bg-neutral-900 text-white hover:bg-neutral-800 active:bg-neutral-950 transition-all shadow-sm inline-flex items-center gap-1.5 cursor-pointer border-0"
+                        >
+                          View Details
+                          <HiOutlineExternalLink size={13} className="opacity-80" />
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -260,6 +273,13 @@ export default function Users() {
                     <HiOutlineUsers size={12} />
                     Registered
                   </span>
+                  <button
+                    onClick={() => setSelected(u)}
+                    className="px-4 py-2 rounded-xl text-xs font-semibold bg-neutral-900 text-white hover:bg-neutral-800 active:bg-neutral-950 transition-all shadow-sm inline-flex items-center gap-1.5 cursor-pointer border-0"
+                  >
+                    View Details
+                    <HiOutlineExternalLink size={13} className="opacity-80" />
+                  </button>
                 </div>
               </div>
             ))}
@@ -288,6 +308,9 @@ export default function Users() {
           </div>
         </>
       )}
+
+      {/* User details modal */}
+      <UserDetailsModal user={selected} onClose={() => setSelected(null)} />
     </div>
   );
 }
