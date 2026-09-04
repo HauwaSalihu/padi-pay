@@ -102,12 +102,14 @@ export default function Users() {
         </div>
 </div>
 {/* Main Content Area */}
-      {isLoading ? (
+      {isLoading && (
         <div className="flex flex-col items-center justify-center py-24 px-4 bg-white/45 backdrop-blur-md border border-white/60 rounded-2xl shadow-sm">
           <div className="w-8 h-8 rounded-full border-2 border-neutral-200 border-t-[#68123D] animate-spin mb-4" />
           <p className="text-sm font-medium text-gray-500">Loading users...</p>
         </div>
-      ) : isError ? (
+      )}
+
+      {isError && (
         <div className="flex flex-col items-center justify-center py-16 px-4 bg-red-50/20 backdrop-blur-md border border-red-100/50 rounded-2xl shadow-sm text-center">
           <div className="w-12 h-12 rounded-full bg-red-50 text-red-500 flex items-center justify-center mb-4 border border-red-100/30">
             <HiOutlineX size={22} />
@@ -123,7 +125,9 @@ export default function Users() {
             Retry Connection
           </button>
         </div>
-      ) : filtered.length === 0 ? (
+      )}
+
+      {!isLoading && !isError && filtered.length === 0 && (
         <div className="flex flex-col items-center justify-center py-24 px-4 bg-white/45 backdrop-blur-md border border-white/60 rounded-2xl shadow-sm text-center">
           <div className="w-12 h-12 rounded-full bg-gray-50 text-gray-400 flex items-center justify-center mb-4 border border-gray-100/50">
             <HiOutlineSearch size={20} />
@@ -133,7 +137,9 @@ export default function Users() {
             There are no registered users matching your search query or criteria.
           </p>
         </div>
-      ) : (
+      )}
+
+      {!isLoading && !isError && filtered.length > 0 && (
         <>
           {/* Desktop Table View */}
           <div className="hidden md:block bg-white/50 backdrop-blur-lg border border-white/70 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.02)] overflow-hidden">
