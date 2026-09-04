@@ -68,11 +68,26 @@ export interface PendingAjoApplicationsResponse {
   meta: PaginationMeta;
 }
 
+export interface AdminUser {
+  id: string;
+  first_name: string;
+  middle_name: string;
+  last_name: string;
+  email: string | null;
+  phone: string;
+  date_created: string;
+}
+
 export interface AppStats {
   signedUpUsers: number;
   activeAjoGroups: number;
   ajoGroupsWaitingActivation: number;
   pendingUsers: number;
+}
+
+export interface GetUsersResponse {
+  data: AdminUser[];
+  meta: PaginationMeta;
 }
 
 export interface AppStatsResponse {
@@ -110,6 +125,16 @@ export const adminApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ['AjoApplications'],
     }),
+    getUsers: builder.query<
+      GetUsersResponse,
+      { page: number; limit: number }
+    >({
+      query: ({ page, limit }) => ({
+        url: `/admin-dashboard/users?page=${page}&limit=${limit}`,
+        method: 'GET',
+      }),
+      providesTags: ['User'],
+    }),
   }),
 });
 
@@ -117,4 +142,5 @@ export const {
   useGetPendingAjoApplicationsQuery,
   useHandleAjoApplicationMutation,
   useGetAppStatsQuery,
+  useGetUsersQuery,
 } = adminApi;
