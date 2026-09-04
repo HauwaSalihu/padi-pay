@@ -27,12 +27,21 @@ export default function UserDetailsModal({ user, onClose }: UserDetailsModalProp
 
   return (
     <>
-      {/* Backdrop blur overlay */}
-      <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-40 transition-opacity duration-300" onClick={onClose} />
+      <style>{`
+        @keyframes slideIn {
+          from { transform: translateX(100%); opacity: 0.9; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+        .drawer-animate {
+          animation: slideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+      `}</style>
 
-      {/* Modal content panel */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="relative w-full max-w-2xl bg-white/85 backdrop-blur-2xl border border-white/60 shadow-[0_24px_60px_rgba(0,0,0,0.18)] rounded-3xl overflow-hidden max-h-[90vh] flex flex-col text-sm text-[#181B25] animate-[fadeIn_0.15s_ease-out]">
+      {/* Backdrop blur overlay */}
+      <div className="fixed inset-0 bg-black/15 backdrop-blur-md z-40 transition-opacity duration-300" onClick={onClose} />
+
+      {/* Slide-over drawer panel */}
+      <div className="fixed top-4 right-4 bottom-4 w-[calc(100% - 2rem)] md:w-full md:max-w-xl bg-white/85 backdrop-blur-2xl border border-white/50 shadow-[0_24px_60px_rgba(0,0,0,0.12)] rounded-3xl overflow-hidden flex flex-col text-sm text-[#181B25] drawer-animate z-50">
           {/* Modal Header */}
           <div className="flex justify-between items-center border-b border-gray-100/50 p-6">
             <div className="space-y-1">
@@ -128,7 +137,6 @@ export default function UserDetailsModal({ user, onClose }: UserDetailsModalProp
               Close
             </button>
           </div>
-        </div>
       </div>
     </>
   );
