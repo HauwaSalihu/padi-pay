@@ -45,6 +45,11 @@ export interface UserDetails {
   nextOfKin: UserNextOfKin[];
 }
 
+export interface AdminStatusResponse {
+  isAdmin: boolean;
+  adminRole?: string;
+}
+
 export const userApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getProfile: builder.query<AuthResponse, void>({
@@ -59,6 +64,10 @@ export const userApi = baseApi.injectEndpoints({
       query: (userId) => `/admin-dashboard/users/${userId}`,
       providesTags: ['User'],
     }),
+    getAdminStatus: builder.query<AdminStatusResponse, void>({
+      query: () => '/auth/admin-status',
+      providesTags: ['User'],
+    }),
   }),
 });
 
@@ -66,4 +75,5 @@ export const {
   useGetProfileQuery,
   useGetMeQuery,
   useGetUserDetailsQuery,
+  useGetAdminStatusQuery,
 } = userApi;
