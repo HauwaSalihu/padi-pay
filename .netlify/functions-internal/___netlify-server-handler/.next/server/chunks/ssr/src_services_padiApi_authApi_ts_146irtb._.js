@@ -1,0 +1,3 @@
+module.exports=[58450,a=>{"use strict";let{useLoginMutation:b,useLogoutMutation:c}=a.i(90937).baseApi.injectEndpoints({endpoints:a=>({login:a.mutation({query:a=>({url:"/auth/login",method:"POST",body:a})}),logout:a.mutation({query:()=>({url:"/auth/logout",method:"POST"}),invalidatesTags:["User"]})})});a.s(["useLoginMutation",0,b,"useLogoutMutation",0,c])}];
+
+//# sourceMappingURL=src_services_padiApi_authApi_ts_146irtb._.js.map
