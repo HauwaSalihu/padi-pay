@@ -8,6 +8,7 @@ import { useLogoutMutation } from '../services/padiApi/authApi';
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { data, isLoading, isError } = useGetAdminStatusQuery();
+  console.log('data', data);
   const [logout] = useLogoutMutation();
   
   useEffect(() => {
