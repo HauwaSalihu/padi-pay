@@ -9,7 +9,10 @@ import {
   HiOutlineChevronRight,
   HiOutlineExternalLink,
 } from "react-icons/hi";
-import { useGetUsersQuery } from "@/services/padiApi/adminApi";
+import {
+  useGetUsersQuery,
+  useSearchUsersQuery,
+} from "@/services/padiApi/adminApi";
 import UserDetailsModal from "./UserDetailsModal";
 
 export default function Users() {
@@ -18,21 +21,38 @@ export default function Users() {
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const { data, isLoading, isError, refetch } = useGetUsersQuery({ page, limit });
-
-  const users = data?.data || [];
-  const meta = data?.meta || { page: 1, limit: 10, total: 0, totalPages: 0 };
-
-  const filtered = users.filter((u) => {
-    const s = query.toLowerCase();
-    return (
-      `${u.first_name} ${u.middle_name || ""} ${u.last_name}`
-        .toLowerCase()
-        .includes(s) ||
-      (u.email || "").toLowerCase().includes(s) ||
-      u.phone.toLowerCase().includes(s)
-    );
+  const { data, isLoading, isError, refetch } = useGetUsersQuery({
+    page,
+    limit,
   });
+
+  const {
+    data: searchData,
+    isLoading: isSearchLoading,
+    isFetching: isSearchFetching,
+    isError: isSearchError,
+    refetch: refetchSearch,
+  } = useSearchUsersQuery(
+    { query },
+    {
+      skip: !query.trim(),
+    },
+  );
+
+  const isSearching = query.trim().length > 0;
+
+  const users = isSearching ? searchData || [] : data?.data || [];
+
+  const meta = data?.meta || {
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  };
+
+  const showLoading = isSearching
+    ? isSearchLoading || isSearchFetching
+    : isLoading;
 
   const getInitials = (first?: string, last?: string) => {
     const f = first ? first.charAt(0) : "";
@@ -40,8 +60,13 @@ export default function Users() {
     return `${f}${l}`.toUpperCase() || "U";
   };
 
-  const fullName = (u: { first_name: string; middle_name: string; last_name: string }) =>
-    [u.first_name, u.middle_name, u.last_name].filter(Boolean).join(" ") || "N/A";
+  const fullName = (u: {
+    first_name: string;
+    middle_name: string;
+    last_name: string;
+  }) =>
+    [u.first_name, u.middle_name, u.last_name].filter(Boolean).join(" ") ||
+    "N/A";
 
   const fmtDate = (date?: string) => {
     if (!date) return "N/A";
@@ -59,9 +84,12 @@ export default function Users() {
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-gray-100/50 pb-5">
         <div className="space-y-1.5">
-          <h1 className="text-3xl font-bold tracking-tight text-[#181B25]">Users</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-[#181B25]">
+            Users
+          </h1>
           <p className="text-sm text-[#525866]/80 max-w-xl">
-            Manage and review all registered PadiPay users and their account details.
+            Manage and review all registered PadiPay users and their account
+            details.
           </p>
         </div>
         {!isLoading && !isError && meta.total > 0 && (
@@ -77,7 +105,10 @@ export default function Users() {
       {/* Search & Configuration Bar */}
       <div className="bg-white/45 backdrop-blur-md border border-white/60 p-4 rounded-2xl flex flex-col sm:flex-row gap-4 justify-between items-center shadow-sm">
         <div className="relative w-full sm:max-w-md">
-          <HiOutlineSearch size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <HiOutlineSearch
+            size={18}
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+          />
           <input
             type="text"
             placeholder="Search by name, email or phone..."
@@ -103,9 +134,9 @@ export default function Users() {
             ))}
           </select>
         </div>
-</div>
-{/* Main Content Area */}
-      {isLoading && (
+      </div>
+      {/* Main Content Area */}
+      {showLoading && (
         <div className="flex flex-col items-center justify-center py-24 px-4 bg-white/45 backdrop-blur-md border border-white/60 rounded-2xl shadow-sm">
           <div className="w-8 h-8 rounded-full border-2 border-neutral-200 border-t-[#68123D] animate-spin mb-4" />
           <p className="text-sm font-medium text-gray-500">Loading users...</p>
@@ -117,12 +148,20 @@ export default function Users() {
           <div className="w-12 h-12 rounded-full bg-red-50 text-red-500 flex items-center justify-center mb-4 border border-red-100/30">
             <HiOutlineX size={22} />
           </div>
-          <h3 className="text-sm font-semibold text-red-900 mb-1">Failed to load users</h3>
+          <h3 className="text-sm font-semibold text-red-900 mb-1">
+            Failed to load users
+          </h3>
           <p className="text-xs text-red-700/80 max-w-xs mb-5">
             There was an issue fetching the registered users. Please try again.
           </p>
           <button
-            onClick={() => refetch()}
+            onClick={() => {
+              if (isSearching) {
+                refetchSearch();
+              } else {
+                refetch();
+              }
+            }}
             className="bg-[#68123D] hover:bg-[#68123D]/95 active:bg-[#68123D] text-white px-5 py-2.5 rounded-xl text-xs font-semibold shadow-sm transition-all cursor-pointer"
           >
             Retry Connection
@@ -130,19 +169,22 @@ export default function Users() {
         </div>
       )}
 
-      {!isLoading && !isError && filtered.length === 0 && (
+      {!showLoading && !isError && users.length === 0 && (
         <div className="flex flex-col items-center justify-center py-24 px-4 bg-white/45 backdrop-blur-md border border-white/60 rounded-2xl shadow-sm text-center">
           <div className="w-12 h-12 rounded-full bg-gray-50 text-gray-400 flex items-center justify-center mb-4 border border-gray-100/50">
             <HiOutlineSearch size={20} />
           </div>
-          <h3 className="text-sm font-semibold text-gray-800 mb-1">No users found</h3>
+          <h3 className="text-sm font-semibold text-gray-800 mb-1">
+            No users found
+          </h3>
           <p className="text-xs text-gray-400 max-w-xs">
-            There are no registered users matching your search query or criteria.
+            There are no registered users matching your search query or
+            criteria.
           </p>
         </div>
       )}
 
-      {!isLoading && !isError && filtered.length > 0 && (
+      {!showLoading && !isError && users.length > 0 && (
         <>
           {/* Desktop Table View */}
           <div className="hidden md:block bg-white/50 backdrop-blur-lg border border-white/70 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.02)] overflow-hidden">
@@ -155,11 +197,13 @@ export default function Users() {
                     <th className="py-4.5 px-6 font-medium">Email Address</th>
                     <th className="py-4.5 px-6 font-medium">Phone Number</th>
                     <th className="py-4.5 px-6 font-medium">Date Created</th>
-                    <th className="py-4.5 px-6 font-medium text-right">Actions</th>
+                    <th className="py-4.5 px-6 font-medium text-right">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100/30 text-sm">
-{filtered.map((u) => (
+                  {users.map((u) => (
                     <tr
                       key={u.id}
                       className="hover:bg-white/45 transition-all duration-150 border-b border-gray-100/40 last:border-0 group"
@@ -179,10 +223,14 @@ export default function Users() {
                           </div>
                         </div>
                       </td>
-                      <td className="py-4.5 px-6 text-gray-600">{u.email || "N/A"}</td>
+                      <td className="py-4.5 px-6 text-gray-600">
+                        {u.email || "N/A"}
+                      </td>
                       <td className="py-4.5 px-6 text-gray-600">{u.phone}</td>
                       <td className="py-4.5 px-6">
-                        <span className="text-sm text-gray-600">{fmtDate(u.date_created)}</span>
+                        <span className="text-sm text-gray-600">
+                          {fmtDate(u.date_created)}
+                        </span>
                       </td>
                       <td className="py-4.5 px-6 text-right">
                         <button
@@ -190,7 +238,10 @@ export default function Users() {
                           className="px-4 py-2 rounded-xl text-xs font-semibold bg-neutral-900 text-white hover:bg-neutral-800 active:bg-neutral-950 transition-all shadow-sm inline-flex items-center gap-1.5 cursor-pointer border-0"
                         >
                           View Details
-                          <HiOutlineExternalLink size={13} className="opacity-80" />
+                          <HiOutlineExternalLink
+                            size={13}
+                            className="opacity-80"
+                          />
                         </button>
                       </td>
                     </tr>
@@ -212,7 +263,9 @@ export default function Users() {
                   <HiOutlineChevronLeft size={16} />
                 </button>
                 <button
-                  onClick={() => setPage((p) => Math.min(meta.totalPages, p + 1))}
+                  onClick={() =>
+                    setPage((p) => Math.min(meta.totalPages, p + 1))
+                  }
                   disabled={page >= meta.totalPages}
                   className="p-2 bg-white/50 border border-gray-200/50 hover:bg-white hover:border-gray-300 active:bg-gray-100 rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed text-gray-600 shadow-sm cursor-pointer"
                 >
@@ -221,9 +274,9 @@ export default function Users() {
               </div>
             </div>
           </div>
-{/* Mobile Card Stack View */}
+          {/* Mobile Card Stack View */}
           <div className="space-y-4 md:hidden mt-6">
-            {filtered.map((u) => (
+            {users.map((u) => (
               <div
                 key={u.id}
                 className="bg-white/60 backdrop-blur-md border border-white/70 rounded-2xl p-5 shadow-sm space-y-4 hover:bg-white/80 transition-all duration-200"
@@ -237,7 +290,9 @@ export default function Users() {
                       <h3 className="font-semibold text-gray-800 text-sm leading-tight">
                         {fullName(u)}
                       </h3>
-                      <p className="text-xs text-gray-400 mt-0.5">{u.email || u.phone}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {u.email || u.phone}
+                      </p>
                     </div>
                   </div>
                   <span className="text-[10px] font-mono text-gray-400 bg-gray-100/50 px-2 py-1 rounded-md border border-gray-100/30">
@@ -247,24 +302,36 @@ export default function Users() {
 
                 <div className="grid grid-cols-2 gap-y-3.5 gap-x-4 border-t border-b border-gray-100/50 py-3.5 text-xs">
                   <div>
-                    <span className="text-gray-400 block font-medium">Email Address</span>
+                    <span className="text-gray-400 block font-medium">
+                      Email Address
+                    </span>
                     <span className="font-semibold text-gray-700 mt-0.5 block break-all">
                       {u.email || "N/A"}
                     </span>
                   </div>
                   <div>
-                    <span className="text-gray-400 block font-medium">Phone Number</span>
-                    <span className="font-semibold text-gray-700 mt-0.5 block">{u.phone}</span>
+                    <span className="text-gray-400 block font-medium">
+                      Phone Number
+                    </span>
+                    <span className="font-semibold text-gray-700 mt-0.5 block">
+                      {u.phone}
+                    </span>
                   </div>
                   <div>
-                    <span className="text-gray-400 block font-medium">Date Created</span>
+                    <span className="text-gray-400 block font-medium">
+                      Date Created
+                    </span>
                     <span className="font-semibold text-gray-700 mt-0.5 block">
                       {fmtDate(u.date_created)}
                     </span>
                   </div>
                   <div>
-                    <span className="text-gray-400 block font-medium">User ID</span>
-                    <span className="font-mono text-gray-600 mt-0.5 block">{u.id.substring(0, 12)}...</span>
+                    <span className="text-gray-400 block font-medium">
+                      User ID
+                    </span>
+                    <span className="font-mono text-gray-600 mt-0.5 block">
+                      {u.id.substring(0, 12)}...
+                    </span>
                   </div>
                 </div>
 
@@ -283,7 +350,7 @@ export default function Users() {
                 </div>
               </div>
             ))}
-{/* Mobile Footer / Pagination */}
+            {/* Mobile Footer / Pagination */}
             <div className="bg-white/45 backdrop-blur-md border border-white/60 p-4 rounded-2xl flex items-center justify-between text-xs text-gray-500 font-medium shadow-sm">
               <span>
                 Page {meta.page} of {meta.totalPages}
@@ -297,7 +364,9 @@ export default function Users() {
                   <HiOutlineChevronLeft size={16} />
                 </button>
                 <button
-                  onClick={() => setPage((p) => Math.min(meta.totalPages, p + 1))}
+                  onClick={() =>
+                    setPage((p) => Math.min(meta.totalPages, p + 1))
+                  }
                   disabled={page >= meta.totalPages}
                   className="p-2.5 bg-white border border-gray-200/50 hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed text-gray-600 shadow-sm cursor-pointer"
                 >
@@ -310,7 +379,10 @@ export default function Users() {
       )}
 
       {/* User details modal */}
-      <UserDetailsModal userId={selectedId} onClose={() => setSelectedId(null)} />
+      <UserDetailsModal
+        userId={selectedId}
+        onClose={() => setSelectedId(null)}
+      />
     </div>
   );
 }
