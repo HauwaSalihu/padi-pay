@@ -1,7 +1,12 @@
-import type { NextConfig } from 'next';
-
-const nextConfig: NextConfig = {
-  
+const nextConfig = {
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: 'https://padiapi.padi-pay.com/:path*',
+      },
+    ];
+  },
 };
 
-export default nextConfig;
+module.exports = nextConfig;
