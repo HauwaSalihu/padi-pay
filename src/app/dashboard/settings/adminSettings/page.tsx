@@ -11,11 +11,7 @@ import {
   HiOutlineUser,
 } from "react-icons/hi";
 
-import {
-  useGetUsersQuery,
-  AdminUser,
-  AdminRole,
-} from "@/services/padiApi/adminApi";
+import { useGetUsersQuery } from "@/services/padiApi/adminApi";
 
 const ROLE_STYLES: Record<string, string> = {
   SUPERADMIN: "bg-[#68123D]/10 text-[#68123D] border-[#68123D]/20",
@@ -65,9 +61,9 @@ export default function AdminSettings() {
     });
   };
 
-  const roleLabel = (role: AdminRole | "USER") => {
-    if (role === AdminRole.SUPERADMIN) return "Super Admin";
-    if (role === AdminRole.ADMIN) return "Admin";
+  const roleLabel = (adminRole?: string | null) => {
+    if (adminRole === "SUPERADMIN") return "Super Admin";
+    if (adminRole === "ADMIN") return "Admin";
     return "Registered";
   };
 
@@ -166,13 +162,13 @@ export default function AdminSettings() {
                   <th className="py-4.5 px-6 font-medium">Name</th>
                   <th className="py-4.5 px-6 font-medium">Email Address</th>
                   <th className="py-4.5 px-6 font-medium">Phone Number</th>
-                  <th className="py-4.5 px-6 font-medium">Role</th>
+                  <th className="py-4.5 px-6 font-medium">Admin Status</th>
                   <th className="py-4.5 px-6 font-medium">Date Created</th>
                   <th className="py-4.5 px-6 font-medium text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100/30 text-sm">
-                {users.map((u: AdminUser) => (
+                {users.map((u) => (
                   <tr
                     key={u.id}
                     className="hover:bg-white/45 transition-all duration-150 border-b border-gray-100/40 last:border-0 group"
@@ -197,9 +193,9 @@ export default function AdminSettings() {
                     </td>
                     <td className="py-4.5 px-6 text-gray-600">{u.phone}</td>
                     <td className="py-4.5 px-6">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${ROLE_STYLES[u.role] || ROLE_STYLES.USER}`}>
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${ROLE_STYLES[u.adminRole || "USER"] || ROLE_STYLES.USER}`}>
                         <HiOutlineShieldCheck size={11} />
-                        {roleLabel(u.role)}
+                        {roleLabel(u.adminRole)}
                       </span>
                     </td>
                     <td className="py-4.5 px-6">
@@ -257,7 +253,7 @@ export default function AdminSettings() {
       {/* Mobile Card Stack View */}
       {!isLoading && !isError && users.length > 0 && (
         <div className="space-y-4 md:hidden mt-6">
-          {users.map((u: AdminUser) => (
+          {users.map((u) => (
             <div
               key={u.id}
               className="bg-white/60 backdrop-blur-md border border-white/70 rounded-2xl p-5 shadow-sm space-y-4 hover:bg-white/80 transition-all duration-200"
@@ -282,9 +278,9 @@ export default function AdminSettings() {
               </div>
 
               <div className="flex items-center justify-between pt-1">
-                <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${ROLE_STYLES[u.role] || ROLE_STYLES.USER}`}>
+                <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${ROLE_STYLES[u.adminRole || "USER"] || ROLE_STYLES.USER}`}>
                   <HiOutlineShieldCheck size={11} />
-                  {roleLabel(u.role)}
+                  {roleLabel(u.adminRole)}
                 </span>
                 {/*
                   TODO: Open the manage-admin modal for this user.

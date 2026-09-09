@@ -81,7 +81,7 @@ export interface AdminUser {
   email: string | null;
   phone: string;
   date_created: string;
-  role: AdminRole | "USER";
+  adminRole: AdminRole | null;
 }
 
 export interface SearchUsersResponse {
