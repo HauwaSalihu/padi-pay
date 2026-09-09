@@ -34,20 +34,8 @@ export default function ManageAdminModal({ user, onClose }: ManageAdminModalProp
   const fullName = [user.first_name, user.middle_name, user.last_name]
     .filter(Boolean)
     .join(" ") || "N/A";
+  const initials = `${(user.first_name || "").charAt(0)}${(user.last_name || "").charAt(0)}`.toUpperCase() || "U";
 
-  const initials = `${(user.first_name || "").charAt(0)}${(user.last_name || "").charAt(0)}`.toUpperCase() ||
-    "U";
-
-  const fmtDate = (date?: string) => {
-    if (!date) return "N/A";
-    const d = new Date(date);
-    if (isNaN(d.getTime())) return "N/A";
-    return d.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
 
   return (
     <>
@@ -130,65 +118,6 @@ export default function ManageAdminModal({ user, onClose }: ManageAdminModalProp
                 <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${ROLE_STYLES[user.adminRole || "USER"] || ROLE_STYLES.USER}`}>
                   <HiOutlineShieldCheck size={11} />
                   {roleLabel(user.adminRole)}
-                </span>
-              </div>
-            </div>
-          </div>
-{/* Account Profile */}
-          <div className="bg-white/40 border border-gray-100/60 rounded-2xl p-5 space-y-4 shadow-sm backdrop-blur-sm">
-            <div className="flex items-center gap-2 border-b border-gray-100/50 pb-2.5">
-              <div className="p-1.5 bg-[#68123D]/5 text-[#68123D] rounded-lg">
-                <HiOutlineUser size={16} />
-              </div>
-              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                Account Profile
-              </h3>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-              <div>
-                <span className="text-gray-400 block font-medium mb-0.5">First Name</span>
-                <span className="text-sm font-semibold text-gray-800">{user.first_name || "N/A"}</span>
-              </div>
-              <div>
-                <span className="text-gray-400 block font-medium mb-0.5">Middle Name</span>
-                <span className="text-sm font-semibold text-gray-800">{user.middle_name || "N/A"}</span>
-              </div>
-              <div>
-                <span className="text-gray-400 block font-medium mb-0.5">Last Name</span>
-                <span className="text-sm font-semibold text-gray-800">{user.last_name || "N/A"}</span>
-              </div>
-              <div>
-                <span className="text-gray-400 block font-medium mb-0.5">Phone Number</span>
-                <span className="text-sm font-semibold text-gray-800">{user.phone || "N/A"}</span>
-              </div>
-              <div className="sm:col-span-2">
-                <span className="text-gray-400 block font-medium mb-0.5">Email Address</span>
-                <span className="text-sm font-semibold text-gray-800 break-all">{user.email || "N/A"}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Account Metadata */}
-          <div className="bg-white/40 border border-gray-100/60 rounded-2xl p-5 space-y-4 shadow-sm backdrop-blur-sm">
-            <div className="flex items-center gap-2 border-b border-gray-100/50 pb-2.5">
-              <div className="p-1.5 bg-[#68123D]/5 text-[#68123D] rounded-lg">
-                <HiOutlineClock size={16} />
-              </div>
-              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                Account Metadata
-              </h3>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 text-xs">
-              <div>
-                <span className="text-gray-400 block font-medium mb-0.5">User ID</span>
-                <span className="text-sm font-mono font-semibold text-gray-800 break-all">{user.id}</span>
-              </div>
-              <div>
-                <span className="text-gray-400 block font-medium mb-0.5">Date Created</span>
-                <span className="text-sm font-semibold text-gray-800">
-                  {fmtDate(user.date_created)}
                 </span>
               </div>
             </div>
