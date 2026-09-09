@@ -105,6 +105,18 @@ export interface AppStatsResponse {
   data: AppStats;
 }
 
+export interface LedgerSummary {
+  totalIncoming: number;
+  totalOutgoing: number;
+  totalPadiPayFee: number;
+  totalPlatformFee: number;
+}
+
+export interface LedgerSummaryResponse {
+  status: string;
+  data: LedgerSummary;
+}
+
 export const adminApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getAppStats: builder.query<AppStatsResponse, void>({
@@ -113,6 +125,12 @@ export const adminApi = baseApi.injectEndpoints({
         method: "GET",
       }),
       providesTags: ["AjoApplications"],
+    }),
+    getLedgerSummary: builder.query<LedgerSummaryResponse, void>({
+      query: () => ({
+        url: "/admin-dashboard/ledger-summary",
+        method: "GET",
+      }),
     }),
     getPendingAjoApplications: builder.query<
       PendingAjoApplicationsResponse,
@@ -187,6 +205,7 @@ export const {
   useGetPendingAjoApplicationsQuery,
   useHandleAjoApplicationMutation,
   useGetAppStatsQuery,
+  useGetLedgerSummaryQuery,
   useGetUsersQuery,
   useSearchUsersQuery,
   useMakeUserAdminMutation,

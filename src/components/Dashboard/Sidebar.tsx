@@ -8,7 +8,8 @@ import {
   HiOutlineClipboardList,
   HiOutlineLogout,
   HiOutlineX,
-  HiOutlineCog
+  HiOutlineCog,
+  HiOutlineCreditCard
 } from "react-icons/hi";
 import { useGetProfileQuery } from "@/services/padiApi/userApi";
 import { useLogoutMutation } from "@/services/padiApi/authApi";
@@ -55,6 +56,11 @@ export default function Sidebar({ onClose }: SidebarProps) {
       href: "/dashboard/ajo-applications",
       label: "Ajo Applications",
       icon: HiOutlineClipboardList,
+    },
+    {
+      href: "/dashboard/transactions",
+      label: "Transactions",
+      icon: HiOutlineCreditCard,
     },
   ];
 
