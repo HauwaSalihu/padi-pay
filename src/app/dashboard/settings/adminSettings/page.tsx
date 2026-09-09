@@ -11,7 +11,8 @@ import {
   HiOutlineUser,
 } from "react-icons/hi";
 
-import { useGetUsersQuery } from "@/services/padiApi/adminApi";
+import { useGetUsersQuery, AdminUser } from "@/services/padiApi/adminApi";
+import ManageAdminModal from "./ManageAdminModal";
 
 const ROLE_STYLES: Record<string, string> = {
   SUPERADMIN: "bg-[#68123D]/10 text-[#68123D] border-[#68123D]/20",
@@ -22,6 +23,7 @@ const ROLE_STYLES: Record<string, string> = {
 export default function AdminSettings() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
 
   const { data, isLoading, isError, refetch } = useGetUsersQuery({
     page,
@@ -204,13 +206,9 @@ export default function AdminSettings() {
                       </span>
                     </td>
                     <td className="py-4.5 px-6 text-right">
-                      {/*
-                        TODO: Open the manage-admin modal for this user.
-                        The modal is a follow-up step and has not been
-                        implemented yet.
-                      */}
                       <button
                         type="button"
+                        onClick={() => setSelectedUser(u)}
                         className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#68123D]/10 text-[#68123D] hover:bg-[#68123D]/15 active:bg-[#68123D]/20 border border-[#68123D]/15 transition-all shadow-sm inline-flex items-center gap-1.5 cursor-pointer"
                       >
                         <HiOutlineUser size={13} className="opacity-80" />
@@ -282,13 +280,9 @@ export default function AdminSettings() {
                   <HiOutlineShieldCheck size={11} />
                   {roleLabel(u.adminRole)}
                 </span>
-                {/*
-                  TODO: Open the manage-admin modal for this user.
-                  The modal is a follow-up step and has not been
-                  implemented yet.
-                */}
                 <button
                   type="button"
+                  onClick={() => setSelectedUser(u)}
                   className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#68123D]/10 text-[#68123D] hover:bg-[#68123D]/15 active:bg-[#68123D]/20 border border-[#68123D]/15 transition-all shadow-sm inline-flex items-center gap-1.5 cursor-pointer"
                 >
                   <HiOutlineUser size={13} className="opacity-80" />
@@ -322,6 +316,10 @@ export default function AdminSettings() {
           </div>
         </div>
       )}
+    <ManageAdminModal
+        user={selectedUser}
+        onClose={() => setSelectedUser(null)}
+      />
     </div>
   );
 }
