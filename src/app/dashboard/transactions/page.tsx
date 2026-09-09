@@ -2,9 +2,15 @@
 
 import React from "react";
 import TransactionsSummary from "@/components/Transactions/breakdown";
+import TransactionsList from "@/components/Transactions/transactions";
 
 export default function TransactionsPage() {
-  return <TransactionsSummary />;
+  return (
+    <div className="space-y-8">
+      <TransactionsSummary />
+      <TransactionsList />
+    </div>
+  );
 }
 
 
