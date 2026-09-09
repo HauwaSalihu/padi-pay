@@ -202,44 +202,6 @@ export const adminApi = baseApi.injectEndpoints({
       }),
       providesTags: ["User"],
     }),
-    searchUsers: builder.query<AdminUser[], { query: string }>({
-      query: ({ query }) => ({
-        url: `/admin-dashboard/users/search?query=${encodeURIComponent(query)}`,
-        method: "GET",
-      }),
-    }),
-    makeUserAdmin: builder.mutation<
-      { message: string; data: AdminUser },
-      { userId: string }
-    >({
-      query: ({ userId }) => ({
-        url: `/admin-dashboard/users/${userId}/admin`,
-        method: "PATCH",
-      }),
-      invalidatesTags: ["User"],
-    }),
-
-    makeUserSuperAdmin: builder.mutation<
-      { message: string; data: AdminUser },
-      { userId: string }
-    >({
-      query: ({ userId }) => ({
-        url: `/admin-dashboard/users/${userId}/superadmin`,
-        method: "PATCH",
-      }),
-      invalidatesTags: ["User"],
-    }),
-
-    removeUserAsAdmin: builder.mutation<
-      { message: string },
-      { userId: string }
-    >({
-      query: ({ userId }) => ({
-        url: `/admin-dashboard/users/${userId}/remove-admin`,
-        method: "PATCH",
-      }),
-      invalidatesTags: ["User"],
-    }),
   }),
 });
 
@@ -250,8 +212,4 @@ export const {
   useGetLedgerSummaryQuery,
   useGetLedgerEntriesQuery,
   useGetUsersQuery,
-  useSearchUsersQuery,
-  useMakeUserAdminMutation,
-  useMakeUserSuperAdminMutation,
-  useRemoveUserAsAdminMutation,
 } = adminApi;
