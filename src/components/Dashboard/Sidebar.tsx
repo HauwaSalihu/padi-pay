@@ -11,7 +11,7 @@ import {
   HiOutlineCog,
   HiOutlineCreditCard
 } from "react-icons/hi";
-import { useGetProfileQuery } from "@/services/padiApi/userApi";
+import { useGetProfileQuery, useGetAdminStatusQuery } from "@/services/padiApi/userApi";
 import { useLogoutMutation } from "@/services/padiApi/authApi";
 
 interface SidebarProps {
@@ -22,6 +22,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { data } = useGetProfileQuery();
+  const { data: adminStatus } = useGetAdminStatusQuery();
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
 
   const user = data?.user;
@@ -61,8 +62,12 @@ export default function Sidebar({ onClose }: SidebarProps) {
       href: "/dashboard/transactions",
       label: "Transactions",
       icon: HiOutlineCreditCard,
+      requireSuperAdmin: true,
     },
   ];
+
+  const isSuperAdmin = adminStatus?.adminRole === "SUPERADMIN";
+  const visibleNavItems = navItems.filter(item => !item.requireSuperAdmin || isSuperAdmin);
 
   return (
     <div className="flex flex-col h-full bg-white">
@@ -86,7 +91,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
 
       {/* Navigation Links */}
       <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
-        {navItems.map((item) => {
+        {visibleNavItems.map((item) => {
           const isActive =
             pathname === item.href ||
             (item.href !== "/dashboard" &&
