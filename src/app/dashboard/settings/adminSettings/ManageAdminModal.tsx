@@ -1,15 +1,21 @@
 "use client";
 
+import { useState } from "react";
 import {
   HiOutlineX,
-  HiOutlineUser,
   HiOutlinePhone,
   HiOutlineMail,
   HiOutlineShieldCheck,
-  HiOutlineClock,
+  HiOutlineCheck,
+  HiOutlineBadgeCheck,
 } from "react-icons/hi";
 
-import { AdminUser } from "@/services/padiApi/adminApi";
+import {
+  AdminUser,
+  AdminRole,
+  useMakeUserAdminMutation,
+} from "@/services/padiApi/adminApi";
+import { AVAILABLE_DASHBOARD_PAGES } from "@/config/dashboard-pages";
 
 const ROLE_STYLES: Record<string, string> = {
   SUPERADMIN: "bg-[#68123D]/10 text-[#68123D] border-[#68123D]/20",
@@ -28,13 +34,57 @@ interface ManageAdminModalProps {
   onClose: () => void;
 }
 
-export default function ManageAdminModal({ user, onClose }: ManageAdminModalProps) {
+export default function ManageAdminModal({
+  user,
+  onClose,
+}: ManageAdminModalProps) {
+  const [role, setRole] = useState<"ADMIN" | "SUPERADMIN">("ADMIN");
+  const [selectedPages, setSelectedPages] = useState<string[]>([]);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [makeUserAdmin, { isLoading: isSubmitting }] = useMakeUserAdminMutation();
+
   if (!user) return null;
+
+  const handleClose = () => {
+    setSubmitError(null);
+    onClose();
+  };
 
   const fullName = [user.first_name, user.middle_name, user.last_name]
     .filter(Boolean)
     .join(" ") || "N/A";
   const initials = `${(user.first_name || "").charAt(0)}${(user.last_name || "").charAt(0)}`.toUpperCase() || "U";
+
+  const togglePage = (pageKey: string) => {
+    if (selectedPages.includes(pageKey)) {
+      setSelectedPages(selectedPages.filter((key) => key !== pageKey));
+    } else {
+      setSelectedPages([...selectedPages, pageKey]);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSubmitError(null);
+
+    try {
+      await makeUserAdmin({
+        targetUserId: user.id,
+        role: role as AdminRole,
+        // Super admins bypass page restrictions, so submit an empty list.
+        selectedPages: role === "SUPERADMIN" ? [] : selectedPages,
+      }).unwrap();
+      onClose();
+    } catch (err: any) {
+      console.error("Failed to make user admin:", err);
+      setSubmitError(
+        err?.data?.message ||
+          (role === "SUPERADMIN"
+            ? "Failed to promote user to super admin. Please try again."
+            : "Failed to save role and access. Please try again."),
+      );
+    }
+  };
 
 
   return (
@@ -52,7 +102,7 @@ export default function ManageAdminModal({ user, onClose }: ManageAdminModalProp
       {/* Backdrop blur overlay */}
       <div
         className="fixed inset-0 bg-black/15 backdrop-blur-md z-40 transition-opacity duration-300"
-        onClick={onClose}
+        onClick={handleClose}
       />
 
       {/* Slide-over drawer panel */}
@@ -71,7 +121,7 @@ export default function ManageAdminModal({ user, onClose }: ManageAdminModalProp
             </div>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="p-2 bg-gray-100/50 hover:bg-gray-100 text-gray-500 hover:text-gray-800 rounded-full transition-all border border-gray-200/20 cursor-pointer"
             aria-label="Close manage admin"
           >
@@ -122,15 +172,166 @@ export default function ManageAdminModal({ user, onClose }: ManageAdminModalProp
               </div>
             </div>
           </div>
+
+          {/* ── Promotion Form ── */}
+          <form id="manage-admin-form" onSubmit={handleSubmit} className="space-y-6">
+            {/* Admin Role Selection */}
+            <div className="bg-white/40 border border-gray-100/60 rounded-2xl p-5 space-y-4 shadow-sm backdrop-blur-sm">
+              <div className="flex items-center gap-2 border-b border-gray-100/50 pb-2.5">
+                <div className="p-1.5 bg-[#68123D]/5 text-[#68123D] rounded-lg">
+                  <HiOutlineBadgeCheck size={16} />
+                </div>
+                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  Assign Admin Role
+                </h3>
+              </div>
+
+              <div className="flex items-center justify-between text-xs">
+                <div>
+                  <span className="text-gray-400 block font-medium mb-0.5">
+                    Role Type
+                  </span>
+                  <span className="text-sm font-semibold text-gray-800">
+                    {role === "SUPERADMIN" ? "Super Admin" : "Admin"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Role type toggle */}
+              <div className="grid grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setRole("ADMIN")}
+                  aria-pressed={role === "ADMIN"}
+                  className={`flex-1 text-left px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#68123D]/40 ${
+                    role === "ADMIN"
+                      ? "bg-amber-50/60 text-amber-900 border-amber-200/70 shadow-sm"
+                      : "bg-white/60 text-gray-600 border-gray-200/60 hover:bg-white hover:text-gray-800"
+                  }`}
+                >
+                  <span className="block">Admin</span>
+                  <span className="text-[11px] opacity-70">Scoped page access</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRole("SUPERADMIN")}
+                  aria-pressed={role === "SUPERADMIN"}
+                  className={`flex-1 text-left px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#68123D]/40 ${
+                    role === "SUPERADMIN"
+                      ? "bg-[#68123D]/10 text-[#68123D] border-[#68123D]/20 shadow-sm"
+                      : "bg-white/60 text-gray-600 border-gray-200/60 hover:bg-white hover:text-gray-800"
+                  }`}
+                >
+                  <span className="block">Super Admin</span>
+                  <span className="text-[11px] opacity-70">Full unrestricted access</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Page Access Selection */}
+            <div className="bg-white/40 border border-gray-100/60 rounded-2xl p-5 space-y-4 shadow-sm backdrop-blur-sm">
+              <div className="flex items-center gap-2 border-b border-gray-100/50 pb-2.5">
+                <div className="p-1.5 bg-[#68123D]/5 text-[#68123D] rounded-lg">
+                  <HiOutlineCheck size={16} />
+                </div>
+                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  Page Access
+                </h3>
+              </div>
+
+              {role === "SUPERADMIN" ? (
+                <div className="flex items-start gap-3 rounded-xl border border-[#68123D]/15 bg-[#68123D]/5 p-3.5 text-xs text-[#68123D]">
+                  <HiOutlineShieldCheck size={18} className="shrink-0" />
+                  <div>
+                    <div className="text-xs font-semibold">Super Admin bypass</div>
+                    <div className="text-[11px] opacity-80">
+                      Super Admins automatically bypass all individual page
+                      restrictions on the backend. No page selection is required.
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  <p className="text-xs text-gray-400">
+                    Tick each page to grant or revoke this admin's access.
+                    <span className="text-gray-500">
+                      ({selectedPages.length} of {AVAILABLE_DASHBOARD_PAGES.length} selected)
+                    </span>
+                  </p>
+                  <div className="space-y-2">
+                    {AVAILABLE_DASHBOARD_PAGES.map((page) => {
+                      const isActive = selectedPages.includes(page.pageKey);
+                      return (
+                        <label
+                          key={page.pageKey}
+                          className={`flex items-start gap-3 rounded-xl border p-3 transition-all cursor-pointer select-none ${
+                            isActive
+                              ? "bg-[#68123D]/5 border-[#68123D]/20"
+                              : "bg-white/70 border-gray-200/70 hover:bg-gray-50 hover:border-gray-300"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isActive}
+                            onChange={() => togglePage(page.pageKey)}
+                            className="mt-0.5 h-4 w-4 shrink-0 accent-[#68123D] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#68123D]/40 rounded border-gray-300"
+                          />
+                          <div className="min-w-0">
+                            <div className={`text-xs font-semibold ${isActive ? "text-[#68123D]" : "text-gray-800"}`}>
+                              {page.label}
+                            </div>
+                            <div className="text-[11px] text-gray-400 mt-0.5">
+                              {page.description}
+                            </div>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  {selectedPages.length === 0 && (
+                    <p className="text-[11px] text-amber-700">
+                      No pages selected — this admin won't be able to access any
+                      dashboard pages.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {submitError && (
+              <div className="flex items-start gap-2.5 rounded-xl border border-rose-200/60 bg-rose-50/10 p-3 text-xs text-rose-700">
+                <HiOutlineShieldCheck size={15} className="shrink-0" />
+                <span>{submitError}</span>
+              </div>
+            )}
+          </form>
         </div>
 
         {/* Modal Footer */}
-        <div className="p-6 border-t border-gray-100/50 bg-white/30 backdrop-blur-md">
+        <div className="p-6 border-t border-gray-100/50 bg-white/30 backdrop-blur-md flex items-center gap-3">
           <button
-            onClick={onClose}
-            className="w-full bg-neutral-900 hover:bg-neutral-800 active:bg-neutral-950 text-white py-3 rounded-2xl font-semibold text-sm transition-all cursor-pointer border-0 shadow-sm"
+            onClick={handleClose}
+            disabled={isSubmitting}
+            className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-2xl font-semibold text-sm transition-all cursor-pointer border-0 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Close
+            Cancel
+          </button>
+          <button
+            type="submit"
+            form="manage-admin-form"
+            disabled={isSubmitting}
+            className="flex-1 bg-[#68123D] hover:bg-[#68123D]/95 active:bg-[#68123D] text-white py-3 rounded-2xl font-semibold text-sm transition-all cursor-pointer border-0 shadow-sm flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {isSubmitting ? (
+              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <HiOutlineShieldCheck size={15} />
+            )}
+            {isSubmitting
+              ? "Saving..."
+              : role === "SUPERADMIN"
+                ? "Promote to Super Admin"
+                : "Save Role & Access"}
           </button>
         </div>
       </div>

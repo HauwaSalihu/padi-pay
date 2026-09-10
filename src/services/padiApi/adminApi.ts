@@ -100,6 +100,12 @@ export interface GetUsersResponse {
   meta: PaginationMeta;
 }
 
+export interface MakeUserAdminRequest {
+  targetUserId: string;
+  role: AdminRole;
+  selectedPages: string[];
+}
+
 export interface AppStatsResponse {
   status: string;
   data: AppStats;
@@ -202,6 +208,14 @@ export const adminApi = baseApi.injectEndpoints({
       }),
       providesTags: ["User"],
     }),
+    makeUserAdmin: builder.mutation<any, MakeUserAdminRequest>({
+      query: ({ targetUserId, role, selectedPages }) => ({
+        url: `/admin-dashboard/users/${targetUserId}/admin`,
+        method: "PATCH",
+        body: { targetUserId, role, selectedPages },
+      }),
+      invalidatesTags: ["User"],
+    }),
   }),
 });
 
@@ -212,4 +226,5 @@ export const {
   useGetLedgerSummaryQuery,
   useGetLedgerEntriesQuery,
   useGetUsersQuery,
+  useMakeUserAdminMutation,
 } = adminApi;
