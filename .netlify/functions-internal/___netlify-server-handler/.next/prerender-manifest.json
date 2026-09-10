@@ -170,6 +170,62 @@
         "x-next-revalidate-tag-token"
       ]
     },
+    "/dashboard/settings/adminSettings": {
+      "routeType": "page",
+      "response": "complete",
+      "compute": "static",
+      "htmlSize": 12503,
+      "experimentalBypassFor": [
+        {
+          "type": "header",
+          "key": "next-action"
+        },
+        {
+          "type": "header",
+          "key": "content-type",
+          "value": "multipart/form-data;.*"
+        }
+      ],
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/dashboard/settings/adminSettings",
+      "dataRoute": "/dashboard/settings/adminSettings.rsc",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/dashboard/transactions": {
+      "routeType": "page",
+      "response": "complete",
+      "compute": "static",
+      "htmlSize": 12004,
+      "experimentalBypassFor": [
+        {
+          "type": "header",
+          "key": "next-action"
+        },
+        {
+          "type": "header",
+          "key": "content-type",
+          "value": "multipart/form-data;.*"
+        }
+      ],
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/dashboard/transactions",
+      "dataRoute": "/dashboard/transactions.rsc",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
     "/favicon.ico": {
       "initialHeaders": {
         "cache-control": "public, max-age=0, must-revalidate",
@@ -234,8 +290,8 @@
   "dynamicRoutes": {},
   "notFoundRoutes": [],
   "preview": {
-    "previewModeId": "0960932d4f0bf1ca7568864970d9991e",
-    "previewModeSigningKey": "f6b5b98dad79e835bca2c12b1c6d9173da9c7380e6d906bd23395c099f54165c",
-    "previewModeEncryptionKey": "8c584224482336767394c0b0e40e6cd4cf0c08b43cd9e053ae0a0c59beee078f"
+    "previewModeId": "149816005ad1ee2f04f4335594afd30f",
+    "previewModeSigningKey": "81671f56a805f0f33ba52f5c846f4407a053400379505c2e1274230236ffd19d",
+    "previewModeEncryptionKey": "3d4ad2bf7db98c08745ba48aab6e844ef5750f9466d8922b81829ecf550ac599"
   }
 }

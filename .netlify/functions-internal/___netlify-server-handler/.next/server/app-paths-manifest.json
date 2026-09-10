@@ -3,7 +3,9 @@
   "/_not-found/page": "app/_not-found/page.js",
   "/dashboard/ajo-applications/page": "app/dashboard/ajo-applications/page.js",
   "/dashboard/page": "app/dashboard/page.js",
+  "/dashboard/settings/adminSettings/page": "app/dashboard/settings/adminSettings/page.js",
   "/dashboard/settings/page": "app/dashboard/settings/page.js",
+  "/dashboard/transactions/page": "app/dashboard/transactions/page.js",
   "/favicon.ico/route": "app/favicon.ico/route.js",
   "/login/page": "app/login/page.js",
   "/page": "app/page.js"

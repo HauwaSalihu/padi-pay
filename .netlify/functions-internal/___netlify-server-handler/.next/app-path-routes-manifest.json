@@ -3,7 +3,9 @@
   "/_not-found/page": "/_not-found",
   "/dashboard/ajo-applications/page": "/dashboard/ajo-applications",
   "/dashboard/page": "/dashboard",
+  "/dashboard/settings/adminSettings/page": "/dashboard/settings/adminSettings",
   "/dashboard/settings/page": "/dashboard/settings",
+  "/dashboard/transactions/page": "/dashboard/transactions",
   "/favicon.ico/route": "/favicon.ico",
   "/login/page": "/login",
   "/page": "/"

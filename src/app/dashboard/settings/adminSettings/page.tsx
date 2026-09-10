@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import {
   HiOutlineSearch,
@@ -11,7 +11,11 @@ import {
   HiOutlineUser,
 } from "react-icons/hi";
 
-import { useGetUsersQuery, AdminUser } from "@/services/padiApi/adminApi";
+import {
+  useGetUsersQuery,
+  useSearchUsersQuery,
+  AdminUser,
+} from "@/services/padiApi/adminApi";
 import ManageAdminModal from "./ManageAdminModal";
 import { PagePermissionGuard } from "@/components/AuthGuard";
 
@@ -25,13 +29,50 @@ export default function AdminSettings() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
 
-  const { data, isLoading, isError, refetch } = useGetUsersQuery({
-    page,
-    limit,
-  });
+  // Debounce the raw input so we don't fire a request on every keystroke.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchInput.trim());
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
-  const users = data?.data || [];
+  const isSearching = debouncedQuery.length > 0;
+
+  const {
+    data,
+    isLoading,
+    isFetching,
+    isError,
+    refetch,
+  } = useGetUsersQuery(
+    {
+      page,
+      limit,
+    },
+    { skip: isSearching }
+  );
+
+  const {
+    data: searchData,
+    isLoading: isSearchLoading,
+    isFetching: isSearchFetching,
+    isError: isSearchError,
+    refetch: refetchSearch,
+  } = useSearchUsersQuery(
+    { query: debouncedQuery },
+    { skip: !isSearching }
+  );
+
+  // Paginated list when browsing, flat search results when searching.
+  const users: AdminUser[] = isSearching ? searchData || [] : data?.data || [];
+  const showLoading = isSearching
+    ? isSearchLoading || isSearchFetching
+    : isLoading || isFetching;
+  const showError = isSearching ? isSearchError : isError;
   const meta = data?.meta || {
     page: 1,
     limit: 10,
@@ -83,7 +124,7 @@ export default function AdminSettings() {
               Review all registered users and manage their administrator status.
             </p>
           </div>
-          {!isLoading && !isError && meta.total > 0 && (
+          {!showLoading && !showError && !isSearching && meta.total > 0 && (
             <div className="self-start md:self-auto">
               <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#68123D]/10 text-[#68123D] border border-[#68123D]/15 backdrop-blur-md shadow-sm">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#68123D] animate-pulse" />
@@ -93,47 +134,99 @@ export default function AdminSettings() {
           )}
         </div>
 
-        {/* Show / per-page selector */}
-        <div className="bg-white/45 backdrop-blur-md border border-white/60 p-4 rounded-2xl flex items-center justify-end gap-2 shadow-sm">
-          <span className="text-xs text-gray-400 font-medium">Show</span>
-          <select
-            value={limit}
-            onChange={(e) => {
-              setLimit(Number(e.target.value));
-              setPage(1);
-            }}
-            className="text-xs border border-gray-200/50 p-2.5 rounded-xl bg-white/40 hover:bg-white/60 hover:border-gray-300 focus:border-[#68123D]/40 outline-none cursor-pointer transition-all font-medium text-gray-700 shadow-sm"
-          >
-            {[5, 10, 20].map((v) => (
-              <option key={v} value={v} className="bg-white text-gray-800">
-                {v} per page
-              </option>
-            ))}
-          </select>
+        {/* Search & Show bar */}
+        <div className="bg-white/45 backdrop-blur-md border border-white/60 p-4 rounded-2xl flex flex-col sm:flex-row gap-4 justify-between items-center shadow-sm">
+          <div className="relative w-full sm:max-w-md">
+            <HiOutlineSearch
+              size={18}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+            />
+            <input
+              type="text"
+              placeholder="Search by name, email or phone..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="w-full pl-10 pr-10 py-2.5 text-sm bg-white/40 border border-gray-200/50 hover:bg-white/60 focus:bg-white/80 focus:border-[#68123D]/40 focus:ring-4 focus:ring-[#68123D]/5 rounded-xl outline-none transition-all shadow-inner placeholder-gray-400 text-gray-800"
+            />
+            {searchInput && (
+              <button
+                type="button"
+                onClick={() => setSearchInput("")}
+                aria-label="Clear search"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+              >
+                <HiOutlineX size={16} />
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-2 self-end sm:self-auto">
+            <span className="text-xs text-gray-400 font-medium">Show</span>
+            <select
+              value={limit}
+              onChange={(e) => {
+                setLimit(Number(e.target.value));
+                setPage(1);
+              }}
+              disabled={isSearching}
+              className="text-xs border border-gray-200/50 p-2.5 rounded-xl bg-white/40 hover:bg-white/60 hover:border-gray-300 focus:border-[#68123D]/40 outline-none cursor-pointer transition-all font-medium text-gray-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {[5, 10, 20].map((v) => (
+                <option key={v} value={v} className="bg-white text-gray-800">
+                  {v} per page
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
+        {/* Searching indicator */}
+        {isSearching && !showLoading && !showError && (
+          <div className="flex items-center justify-between gap-3 bg-[#68123D]/5 border border-[#68123D]/10 rounded-2xl px-4 py-3">
+            <p className="text-xs text-gray-600">
+              <span className="font-semibold text-[#68123D]">
+                {users.length}
+              </span>{" "}
+              {users.length === 1 ? "result" : "results"} for{" "}
+              <span className="font-semibold text-gray-800">
+                &ldquo;{debouncedQuery}&rdquo;
+              </span>
+            </p>
+            <button
+              type="button"
+              onClick={() => setSearchInput("")}
+              className="text-xs font-semibold text-[#68123D] hover:text-[#68123D]/80 transition-colors cursor-pointer shrink-0"
+            >
+              Clear
+            </button>
+          </div>
+        )}
+
         {/* Loading */}
-        {isLoading && (
+        {showLoading && (
           <div className="flex flex-col items-center justify-center py-24 px-4 bg-white/45 backdrop-blur-md border border-white/60 rounded-2xl shadow-sm">
             <div className="w-8 h-8 rounded-full border-2 border-neutral-200 border-t-[#68123D] animate-spin mb-4" />
-            <p className="text-sm font-medium text-gray-500">Loading users...</p>
+            <p className="text-sm font-medium text-gray-500">
+              {isSearching ? "Searching users..." : "Loading users..."}
+            </p>
           </div>
         )}
 
         {/* Error */}
-        {isError && (
+        {showError && (
           <div className="flex flex-col items-center justify-center py-16 px-4 bg-red-50/20 backdrop-blur-md border border-red-100/50 rounded-2xl shadow-sm text-center">
             <div className="w-12 h-12 rounded-full bg-red-50 text-red-500 flex items-center justify-center mb-4 border border-red-100/30">
               <HiOutlineX size={22} />
             </div>
             <h3 className="text-sm font-semibold text-red-900 mb-1">
-              Failed to load users
+              {isSearching ? "Search failed" : "Failed to load users"}
             </h3>
             <p className="text-xs text-red-700/80 max-w-xs mb-5">
-              There was an issue fetching the registered users. Please try again.
+              {isSearching
+                ? "There was an issue searching users. Please try again."
+                : "There was an issue fetching the registered users. Please try again."}
             </p>
             <button
-              onClick={() => refetch()}
+              onClick={() => (isSearching ? refetchSearch() : refetch())}
               className="bg-[#68123D] hover:bg-[#68123D]/95 active:bg-[#68123D] text-white px-5 py-2.5 rounded-xl text-xs font-semibold shadow-sm transition-all cursor-pointer"
             >
               Retry Connection
@@ -142,21 +235,40 @@ export default function AdminSettings() {
         )}
 
         {/* Empty */}
-        {!isLoading && !isError && users.length === 0 && (
+        {!showLoading && !showError && users.length === 0 && (
           <div className="flex flex-col items-center justify-center py-24 px-4 bg-white/45 backdrop-blur-md border border-white/60 rounded-2xl shadow-sm text-center">
             <div className="w-12 h-12 rounded-full bg-gray-50 text-gray-400 flex items-center justify-center mb-4 border border-gray-100/50">
               <HiOutlineSearch size={20} />
             </div>
             <h3 className="text-sm font-semibold text-gray-800 mb-1">
-              No users found
+              {isSearching ? "No matching users" : "No users found"}
             </h3>
             <p className="text-xs text-gray-400 max-w-xs">
-              There are no registered users to display.
+              {isSearching ? (
+                <>
+                  No users match{" "}
+                  <span className="font-semibold text-gray-600">
+                    &ldquo;{debouncedQuery}&rdquo;
+                  </span>
+                  . Try a different name, email or phone.
+                </>
+              ) : (
+                "There are no registered users to display."
+              )}
             </p>
+            {isSearching && (
+              <button
+                type="button"
+                onClick={() => setSearchInput("")}
+                className="mt-5 px-5 py-2.5 rounded-xl text-xs font-semibold bg-[#68123D]/10 text-[#68123D] hover:bg-[#68123D]/15 border border-[#68123D]/15 transition-all cursor-pointer"
+              >
+                Clear search
+              </button>
+            )}
           </div>
         )}
   {/* Desktop Table View */}
-        {!isLoading && !isError && users.length > 0 && (
+        {!showLoading && !showError && users.length > 0 && (
           <div className="hidden md:block bg-white/50 backdrop-blur-lg border border-white/70 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.02)] overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
@@ -223,7 +335,8 @@ export default function AdminSettings() {
               </table>
             </div>
 
-            {/* Table Footer / Pagination */}
+            {/* Table Footer / Pagination (browsing only; search returns all matches) */}
+            {!isSearching && (
             <div className="px-6 py-4.5 bg-white/20 border-t border-gray-100/50 flex items-center justify-between text-xs text-gray-500 font-medium">
               <span>
                 Page {meta.page} of {meta.totalPages} ({meta.total} total)
@@ -247,11 +360,12 @@ export default function AdminSettings() {
                 </button>
               </div>
             </div>
+            )}
           </div>
         )}
 
         {/* Mobile Card Stack View */}
-        {!isLoading && !isError && users.length > 0 && (
+        {!showLoading && !showError && users.length > 0 && (
           <div className="space-y-4 md:hidden mt-6">
             {users.map((u) => (
               <div
@@ -294,7 +408,8 @@ export default function AdminSettings() {
               </div>
             ))}
 
-            {/* Mobile Footer / Pagination */}
+            {/* Mobile Footer / Pagination (browsing only) */}
+            {!isSearching && (
             <div className="bg-white/45 backdrop-blur-md border border-white/60 p-4 rounded-2xl flex items-center justify-between text-xs text-gray-500 font-medium shadow-sm">
               <span>Page {meta.page} of {meta.totalPages}</span>
               <div className="flex gap-2">
@@ -316,6 +431,7 @@ export default function AdminSettings() {
                 </button>
               </div>
             </div>
+            )}
           </div>
         )}
       <ManageAdminModal

@@ -66,6 +66,18 @@
       "namedRegex": "^/dashboard/settings(?:/)?$"
     },
     {
+      "page": "/dashboard/settings/adminSettings",
+      "regex": "^/dashboard/settings/adminSettings(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/settings/adminSettings(?:/)?$"
+    },
+    {
+      "page": "/dashboard/transactions",
+      "regex": "^/dashboard/transactions(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/transactions(?:/)?$"
+    },
+    {
       "page": "/favicon.ico",
       "regex": "^/favicon\\.ico(?:/)?$",
       "routeKeys": {},
