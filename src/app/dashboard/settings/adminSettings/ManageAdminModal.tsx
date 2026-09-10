@@ -16,6 +16,7 @@ import {
   useGetAdminPermissionsQuery,
   useMakeUserAdminMutation,
   useRemoveUserAsAdminMutation,
+  useUpdateAdminPermissionsMutation,
 } from "@/services/padiApi/adminApi";
 import { AVAILABLE_DASHBOARD_PAGES } from "@/config/dashboard-pages";
 
@@ -53,9 +54,12 @@ export default function ManageAdminModal({
   // Armed state for the two-step remove-admin confirmation (first click arms,
   // second click executes). Reset whenever a different user is opened.
   const [confirmingRemove, setConfirmingRemove] = useState(false);
-  const [makeUserAdmin, { isLoading: isSubmitting }] = useMakeUserAdminMutation();
+  const [makeUserAdmin, { isLoading: isCreating }] = useMakeUserAdminMutation();
+  const [updateAdminPermissions, { isLoading: isUpdating }] =
+    useUpdateAdminPermissionsMutation();
   const [removeUserAsAdmin, { isLoading: isRemoving }] =
     useRemoveUserAsAdminMutation();
+  const isSubmitting = isCreating || isUpdating;
 
   const isExistingAdmin = user?.adminRole != null;
 
@@ -167,16 +171,28 @@ export default function ManageAdminModal({
     e.preventDefault();
     setSubmitError(null);
 
+    // Super admins bypass page restrictions, so submit an empty list.
+    const pages = role === "SUPERADMIN" ? [] : selectedPages;
+
     try {
-      await makeUserAdmin({
-        targetUserId: user.id,
-        role: role as AdminRole,
-        // Super admins bypass page restrictions, so submit an empty list.
-        selectedPages: role === "SUPERADMIN" ? [] : selectedPages,
-      }).unwrap();
+      if (isExistingAdmin && user.adminId) {
+        // Existing ADMIN/SUPERADMIN: update role + permissions in place.
+        await updateAdminPermissions({
+          adminId: user.adminId,
+          role: role as AdminRole,
+          selectedPages: pages,
+        }).unwrap();
+      } else {
+        // Plain user: create a fresh Admin record with the chosen role.
+        await makeUserAdmin({
+          targetUserId: user.id,
+          role: role as AdminRole,
+          selectedPages: pages,
+        }).unwrap();
+      }
       onClose();
     } catch (err: any) {
-      console.error("Failed to make user admin:", err);
+      console.error("Failed to save admin role:", err);
       setSubmitError(
         err?.data?.message ||
           (role === "SUPERADMIN"

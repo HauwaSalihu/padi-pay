@@ -108,6 +108,13 @@ export interface MakeUserAdminRequest {
   selectedPages: string[];
 }
 
+export interface UpdateAdminPermissionsRequest {
+  /** Id of the Admin record to update (not the underlying user id). */
+  adminId: string;
+  role: AdminRole;
+  selectedPages: string[];
+}
+
 export interface RemoveUserAsAdminRequest {
   /** Id of the User whose Admin record should be removed. */
   userId: string;
@@ -264,6 +271,14 @@ export const adminApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["User"],
     }),
+    updateAdminPermissions: builder.mutation<any, UpdateAdminPermissionsRequest>({
+      query: ({ adminId, role, selectedPages }) => ({
+        url: `/admin-dashboard/admins/${adminId}/permissions`,
+        method: "PATCH",
+        body: { role, selectedPages },
+      }),
+      invalidatesTags: ["User"],
+    }),
     removeUserAsAdmin: builder.mutation<any, RemoveUserAsAdminRequest>({
       query: ({ userId, adminId }) => ({
         url: `/admin-dashboard/users/${userId}/remove-admin`,
@@ -285,4 +300,5 @@ export const {
   useGetAdminPermissionsQuery,
   useMakeUserAdminMutation,
   useRemoveUserAsAdminMutation,
+  useUpdateAdminPermissionsMutation,
 } = adminApi;
