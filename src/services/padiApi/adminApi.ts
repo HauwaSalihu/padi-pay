@@ -81,6 +81,8 @@ export interface AdminUser {
   email: string | null;
   phone: string;
   date_created: string;
+  /** Id of the Admin record, or null when the user is not an admin. */
+  adminId: string | null;
   adminRole: AdminRole | null;
 }
 
@@ -104,6 +106,35 @@ export interface MakeUserAdminRequest {
   targetUserId: string;
   role: AdminRole;
   selectedPages: string[];
+}
+
+/** A single row from the AdminPermission table. */
+export interface AdminPermissionRecord {
+  id: string;
+  adminId: string;
+  pageKey: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminPermissionsData {
+  adminId: string;
+  role: AdminRole;
+  user: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string | null;
+  };
+  /** Convenience flat list of granted page keys. */
+  pageKeys: string[];
+  /** Full AdminPermission records. */
+  permissions: AdminPermissionRecord[];
+}
+
+export interface GetAdminPermissionsResponse {
+  status: string;
+  data: AdminPermissionsData;
 }
 
 export interface AppStatsResponse {
@@ -208,6 +239,16 @@ export const adminApi = baseApi.injectEndpoints({
       }),
       providesTags: ["User"],
     }),
+    getAdminPermissions: builder.query<
+      GetAdminPermissionsResponse,
+      { adminId: string }
+    >({
+      query: ({ adminId }) => ({
+        url: `/admin-dashboard/admins/${adminId}/permissions`,
+        method: "GET",
+      }),
+      providesTags: ["User"],
+    }),
     makeUserAdmin: builder.mutation<any, MakeUserAdminRequest>({
       query: ({ targetUserId, role, selectedPages }) => ({
         url: `/admin-dashboard/users/${targetUserId}/admin`,
@@ -226,5 +267,6 @@ export const {
   useGetLedgerSummaryQuery,
   useGetLedgerEntriesQuery,
   useGetUsersQuery,
+  useGetAdminPermissionsQuery,
   useMakeUserAdminMutation,
 } = adminApi;

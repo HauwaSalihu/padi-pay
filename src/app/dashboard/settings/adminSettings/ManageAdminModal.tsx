@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   HiOutlineX,
   HiOutlinePhone,
@@ -13,6 +13,7 @@ import {
 import {
   AdminUser,
   AdminRole,
+  useGetAdminPermissionsQuery,
   useMakeUserAdminMutation,
 } from "@/services/padiApi/adminApi";
 import { AVAILABLE_DASHBOARD_PAGES } from "@/config/dashboard-pages";
@@ -38,10 +39,66 @@ export default function ManageAdminModal({
   user,
   onClose,
 }: ManageAdminModalProps) {
-  const [role, setRole] = useState<"ADMIN" | "SUPERADMIN">("ADMIN");
+  // Prefill the role toggle from the user's current status (existing admins
+  // keep their role instead of rendering as a fresh ADMIN promotion).
+  const [role, setRole] = useState<"ADMIN" | "SUPERADMIN">(
+    user?.adminRole === "SUPERADMIN" ? "SUPERADMIN" : "ADMIN",
+  );
   const [selectedPages, setSelectedPages] = useState<string[]>([]);
+  // Tracks whether the operator has manually (un)ticked a page since the
+  // saved permissions arrived, so the prefill below never clobbers edits.
+  const [hasEditedPages, setHasEditedPages] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [makeUserAdmin, { isLoading: isSubmitting }] = useMakeUserAdminMutation();
+
+  const isExistingAdmin = user?.adminRole != null;
+
+  const {
+    data: permissionsData,
+    isError: permissionsError,
+    refetch: refetchPermissions,
+  } = useGetAdminPermissionsQuery(
+    { adminId: user?.adminId ?? "" },
+    // Only existing ADMINs hold page permissions: super admins bypass page
+    // checks entirely and non-admins have no Admin record yet, so skip both.
+    { skip: !user?.adminId || user?.adminRole !== "ADMIN" },
+  );
+
+  useEffect(() => {
+    if (!user?.adminId || user?.adminRole !== "ADMIN") return;
+    refetchPermissions();
+  }, [user?.id, user?.adminId, user?.adminRole, refetchPermissions]);
+
+  // The permission query only runs for existing ADMIN rows (see `skip`
+  // above).
+  const isPermissionsQueryActive =
+    !!user?.adminId && user?.adminRole === "ADMIN";
+
+  const showPermissionsLoading =
+    isPermissionsQueryActive &&
+    !permissionsError &&
+    (!permissionsData || permissionsData.data.adminId !== user?.adminId);
+
+  // Prefill the checkboxes with this admin's previously saved page access.
+  // The permission fetch is skipped for non-ADMIN rows, so for those the
+  // selection simply stays empty. When `user` switches (modal stays mounted),
+  // clear the selection first; the prefill below re-applies once the new
+  // admin's data arrives.
+  useEffect(() => {
+    setRole(user?.adminRole === "SUPERADMIN" ? "SUPERADMIN" : "ADMIN");
+    setSelectedPages([]);
+    setHasEditedPages(false);
+    setSubmitError(null);
+  }, [user?.id, user?.adminRole]);
+
+  useEffect(() => {
+    if (!permissionsData || hasEditedPages) return;
+    // Guard against a cached payload from a previously viewed admin and
+    // re-run on every open (user?.adminId) even when the cached
+    // permissionsData reference itself hasn't changed.
+    if (permissionsData.data.adminId !== user?.adminId) return;
+    setSelectedPages(permissionsData.data.pageKeys ?? []);
+  }, [permissionsData, hasEditedPages, user?.adminId]);
 
   if (!user) return null;
 
@@ -56,6 +113,7 @@ export default function ManageAdminModal({
   const initials = `${(user.first_name || "").charAt(0)}${(user.last_name || "").charAt(0)}`.toUpperCase() || "U";
 
   const togglePage = (pageKey: string) => {
+    setHasEditedPages(true);
     if (selectedPages.includes(pageKey)) {
       setSelectedPages(selectedPages.filter((key) => key !== pageKey));
     } else {
@@ -250,8 +308,36 @@ export default function ManageAdminModal({
                     </div>
                   </div>
                 </div>
+              ) : showPermissionsLoading ? (
+                <div className="space-y-2" aria-live="polite">
+                  {AVAILABLE_DASHBOARD_PAGES.map((page) => (
+                    <div
+                      key={page.pageKey}
+                      className="flex items-center gap-3 rounded-xl border border-gray-200/60 bg-white/60 p-3"
+                    >
+                      <div className="h-4 w-4 shrink-0 rounded bg-gray-200/70 animate-pulse" />
+                      <div className="flex-1 space-y-1.5">
+                        <div className="h-3 w-1/3 rounded bg-gray-200/70 animate-pulse" />
+                        <div className="h-2.5 w-2/3 rounded bg-gray-100 animate-pulse" />
+                      </div>
+                    </div>
+                  ))}
+                  <p className="text-[11px] text-gray-400">
+                    Loading this admin's saved page access…
+                  </p>
+                </div>
               ) : (
                 <div className="space-y-2.5">
+                  {permissionsError && isExistingAdmin && (
+                    <div className="flex items-start gap-2.5 rounded-xl border border-amber-200/70 bg-amber-50/40 p-3 text-[11px] text-amber-800">
+                      <HiOutlineShieldCheck size={15} className="shrink-0 mt-px" />
+                      <span>
+                        Couldn't load this admin's saved page access — starting
+                        with a blank selection. Your changes will still save
+                        normally.
+                      </span>
+                    </div>
+                  )}
                   <p className="text-xs text-gray-400">
                     Tick each page to grant or revoke this admin's access.
                     <span className="text-gray-500">
