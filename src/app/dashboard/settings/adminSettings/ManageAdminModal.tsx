@@ -15,6 +15,7 @@ import {
   AdminRole,
   useGetAdminPermissionsQuery,
   useMakeUserAdminMutation,
+  useRemoveUserAsAdminMutation,
 } from "@/services/padiApi/adminApi";
 import { AVAILABLE_DASHBOARD_PAGES } from "@/config/dashboard-pages";
 
@@ -49,7 +50,12 @@ export default function ManageAdminModal({
   // saved permissions arrived, so the prefill below never clobbers edits.
   const [hasEditedPages, setHasEditedPages] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  // Armed state for the two-step remove-admin confirmation (first click arms,
+  // second click executes). Reset whenever a different user is opened.
+  const [confirmingRemove, setConfirmingRemove] = useState(false);
   const [makeUserAdmin, { isLoading: isSubmitting }] = useMakeUserAdminMutation();
+  const [removeUserAsAdmin, { isLoading: isRemoving }] =
+    useRemoveUserAsAdminMutation();
 
   const isExistingAdmin = user?.adminRole != null;
 
@@ -88,6 +94,7 @@ export default function ManageAdminModal({
     setRole(user?.adminRole === "SUPERADMIN" ? "SUPERADMIN" : "ADMIN");
     setSelectedPages([]);
     setHasEditedPages(false);
+    setConfirmingRemove(false);
     setSubmitError(null);
   }, [user?.id, user?.adminRole]);
 
@@ -99,12 +106,47 @@ export default function ManageAdminModal({
     if (permissionsData.data.adminId !== user?.adminId) return;
     setSelectedPages(permissionsData.data.pageKeys ?? []);
   }, [permissionsData, hasEditedPages, user?.adminId]);
-
   if (!user) return null;
 
   const handleClose = () => {
     setSubmitError(null);
+    setConfirmingRemove(false);
     onClose();
+  };
+
+  // Only wired for rows that actually hold an Admin record. Bails out
+  // defensively if `adminId` is somehow missing, and resets the two-step
+  // confirmation after success (the modal closes) or failure (stay open,
+  // surface the error, let the operator retry).
+  const handleRemoveAdmin = async () => {
+    if (!user?.adminId) {
+      setSubmitError(
+        "This user has no admin record to remove. Please refresh and try again.",
+      );
+      return;
+    }
+
+    if (!confirmingRemove) {
+      setConfirmingRemove(true);
+      return;
+    }
+
+    setSubmitError(null);
+    try {
+      await removeUserAsAdmin({
+        userId: user.id,
+        adminId: user.adminId,
+      }).unwrap();
+      setConfirmingRemove(false);
+      onClose();
+    } catch (err: any) {
+      console.error("Failed to remove user as admin:", err);
+      setConfirmingRemove(false);
+      setSubmitError(
+        err?.data?.message ||
+          "Failed to remove administrator access. Please try again.",
+      );
+    }
   };
 
   const fullName = [user.first_name, user.middle_name, user.last_name]
@@ -180,10 +222,10 @@ export default function ManageAdminModal({
           </div>
           <button
             onClick={handleClose}
-            className="p-2 bg-gray-100/50 hover:bg-gray-100 text-gray-500 hover:text-gray-800 rounded-full transition-all border border-gray-200/20 cursor-pointer"
+            className="p-3 bg-[#68123D]/10 hover:bg-[#68123D] text-[#68123D] hover:text-white rounded-2xl transition-all border border-[#68123D]/20 hover:border-[#68123D] shadow-sm cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#68123D]/40"
             aria-label="Close manage admin"
           >
-            <HiOutlineX size={18} />
+            <HiOutlineX size={20} strokeWidth={2.5} />
           </button>
         </div>
 
@@ -384,6 +426,22 @@ export default function ManageAdminModal({
               )}
             </div>
 
+            {/* Discreet remove-admin control — only for existing
+                admins/superadmins. The actual trigger lives in the footer next
+                to the submit button (it swaps to Cancel / Confirm Remove while
+                armed); this just holds the arming copy so it appears once,
+                right above the actions. */}
+            {isExistingAdmin && confirmingRemove && (
+              <div className="flex items-start gap-2.5 rounded-xl border border-rose-300 bg-rose-100 p-3.5">
+                <HiOutlineX size={16} className="shrink-0 mt-px text-rose-700" />
+                <p className="text-sm font-medium leading-relaxed text-rose-900">
+                  Remove this {roleLabel(user.adminRole).toLowerCase()}'s admin record
+                  {user.adminRole === "ADMIN" ? " and all granted page permissions" : ""}?
+                  The user account stays intact. This cannot be undone.
+                </p>
+              </div>
+            )}
+
             {submitError && (
               <div className="flex items-start gap-2.5 rounded-xl border border-rose-200/60 bg-rose-50/10 p-3 text-xs text-rose-700">
                 <HiOutlineShieldCheck size={15} className="shrink-0" />
@@ -395,30 +453,58 @@ export default function ManageAdminModal({
 
         {/* Modal Footer */}
         <div className="p-6 border-t border-gray-100/50 bg-white/30 backdrop-blur-md flex items-center gap-3">
-          <button
-            onClick={handleClose}
-            disabled={isSubmitting}
-            className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-2xl font-semibold text-sm transition-all cursor-pointer border-0 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            form="manage-admin-form"
-            disabled={isSubmitting}
-            className="flex-1 bg-[#68123D] hover:bg-[#68123D]/95 active:bg-[#68123D] text-white py-3 rounded-2xl font-semibold text-sm transition-all cursor-pointer border-0 shadow-sm flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
-          >
+          {isExistingAdmin && confirmingRemove ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setConfirmingRemove(false)}
+                disabled={isRemoving}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-2xl font-semibold text-sm transition-all cursor-pointer border-0 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleRemoveAdmin}
+                disabled={isRemoving}
+                className="flex-1 bg-rose-600 hover:bg-rose-700 active:bg-rose-700 text-white py-3 rounded-2xl font-semibold text-sm transition-all cursor-pointer border-0 shadow-sm flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {isRemoving ? (
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <HiOutlineX size={15} />
+                )}
+                {isRemoving ? "Removing…" : "Confirm Remove"}
+              </button>
+            </>
+          ) : (
+            <>
+              {isExistingAdmin && (
+                <button
+                  type="button"
+                  onClick={handleRemoveAdmin}
+                  disabled={isRemoving || isSubmitting}
+                  className="flex-1 py-3 rounded-2xl text-sm font-semibold transition-all cursor-pointer border border-rose-200/70 bg-white/60 hover:bg-rose-600 hover:text-white hover:border-rose-600 active:bg-rose-700 text-rose-700 shadow-sm flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <HiOutlineX size={15} />
+                  {`Remove ${roleLabel(user.adminRole)}`}
+                </button>
+              )}
+              <button
+                type="submit"
+                form="manage-admin-form"
+                disabled={isSubmitting || isRemoving}
+                className="flex-1 bg-[#68123D] hover:bg-[#68123D]/95 active:bg-[#68123D] text-white py-3 rounded-2xl font-semibold text-sm transition-all cursor-pointer border-0 shadow-sm flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
             {isSubmitting ? (
               <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : (
               <HiOutlineShieldCheck size={15} />
             )}
-            {isSubmitting
-              ? "Saving..."
-              : role === "SUPERADMIN"
-                ? "Promote to Super Admin"
-                : "Save Role & Access"}
+            {isSubmitting ? "Saving..." : "Save Role & Access"}
           </button>
+            </>
+          )}
         </div>
       </div>
     </>
