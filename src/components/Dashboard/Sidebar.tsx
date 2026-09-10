@@ -52,22 +52,50 @@ export default function Sidebar({ onClose }: SidebarProps) {
       href: "/dashboard",
       label: "Dashboard",
       icon: HiOutlineHome,
+      pageKey: "dashboard",
     },
     {
       href: "/dashboard/ajo-applications",
       label: "Ajo Applications",
       icon: HiOutlineClipboardList,
+      pageKey: "ajo",
     },
     {
       href: "/dashboard/transactions",
       label: "Transactions",
       icon: HiOutlineCreditCard,
-      requireSuperAdmin: true,
+      pageKey: "transactions",
     },
   ];
 
-  const isSuperAdmin = adminStatus?.adminRole === "SUPERADMIN";
-  const visibleNavItems = navItems.filter(item => !item.requireSuperAdmin || isSuperAdmin);
+  const normalize = (v: unknown) =>
+    typeof v === 'string' ? v.trim().toLowerCase() : null;
+  const isSuperAdmin =
+    typeof adminStatus?.adminRole === 'string' &&
+    adminStatus.adminRole.toUpperCase().replace(/[^A-Z]/g, '') === 'SUPERADMIN';
+  const grantedKeys = new Set<string>();
+  const rawPerms =
+    (adminStatus as unknown as { permissions?: unknown; pageKeys?: unknown })
+      ?.permissions ??
+    (adminStatus as unknown as { pageKeys?: unknown })?.pageKeys;
+  const permList = Array.isArray(rawPerms) ? rawPerms : rawPerms ? [rawPerms] : [];
+  for (const p of permList) {
+    if (typeof p === 'string') {
+      const k = normalize(p);
+      if (k) grantedKeys.add(k);
+    } else if (p && typeof p === 'object') {
+      const rec = p as Record<string, unknown>;
+      const k = normalize(rec.pageKey) ?? normalize(rec.key) ?? normalize(rec.name);
+      if (k) grantedKeys.add(k);
+    }
+  }
+  // While permissions are still loading (non-super admin, no keys yet),
+  // show all links so valid admins never see an empty nav flash. The
+  // PagePermissionGuard on each page still enforces the real check.
+  const permsLoaded = isSuperAdmin || grantedKeys.size > 0;
+  const visibleNavItems = navItems.filter(
+    (item) => isSuperAdmin || !permsLoaded || grantedKeys.has(normalize(item.pageKey)!)
+  );
 
   return (
     <div className="flex flex-col h-full bg-white">

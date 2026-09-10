@@ -28,13 +28,13 @@ export const AVAILABLE_DASHBOARD_PAGES: DashboardPageConfig[] = [
     description: "",
   },
   {
-    pageKey: "ajo-applications",
+    pageKey: "ajo",
     label: "Ajo Applications",
     description: "",
   },
-  // {
-  //   pageKey: "settings",
-  //   label: "System Settings",
-  //   description: "",
-  // },
+  {
+    pageKey: "settings",
+    label: "Settings",
+    description: "",
+  },
 ];

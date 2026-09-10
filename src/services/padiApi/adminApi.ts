@@ -86,9 +86,7 @@ export interface AdminUser {
   adminRole: AdminRole | null;
 }
 
-export interface SearchUsersResponse {
-  data: AdminUser[];
-}
+export type SearchUsersResponse = AdminUser[];
 
 export interface AppStats {
   signedUpUsers: number;
@@ -253,6 +251,13 @@ export const adminApi = baseApi.injectEndpoints({
       }),
       providesTags: ["User"],
     }),
+    searchUsers: builder.query<AdminUser[], { query: string }>({
+      query: ({ query }) => ({
+        url: `/admin-dashboard/users/search?query=${encodeURIComponent(query)}`,
+        method: "GET",
+      }),
+      providesTags: ["User"],
+    }),
     getAdminPermissions: builder.query<
       GetAdminPermissionsResponse,
       { adminId: string }
@@ -297,6 +302,7 @@ export const {
   useGetLedgerSummaryQuery,
   useGetLedgerEntriesQuery,
   useGetUsersQuery,
+  useSearchUsersQuery,
   useGetAdminPermissionsQuery,
   useMakeUserAdminMutation,
   useRemoveUserAsAdminMutation,

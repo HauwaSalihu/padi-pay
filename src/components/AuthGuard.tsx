@@ -14,25 +14,69 @@ interface PagePermissionGuardProps {
   pageKey: string; // The specific string matching the database permission table entry
 }
 
-// Local extension of the admin-status payload to support granular page permissions
-// without mutating the shared RTK Query type. Supports both shapes:
+// Local extension of the admin-status payload to support granular page permissions.
+// Backend `/auth/admin-status` returns flat string arrays under BOTH
+// `permissions` and `pageKeys` (plus legacy/alternate shapes are tolerated):
 // - string[] e.g. ["transactions", "dashboard"]
 // - object[] e.g. [{ pageKey: "transactions" }]
-type PermissionEntry = string | { pageKey: string };
+// - { pageKeys: [...] } / { permissions: [...] } wrappers
 type AdminStatusWithPermissions = {
   isAdmin?: boolean;
   adminRole?: string;
-  permissions?: PermissionEntry[];
+  permissions?: unknown;
+  pageKeys?: unknown;
 };
 
+function normalizeKey(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed ? trimmed.toLowerCase() : null;
+}
+
+function extractRawPermissions(data: AdminStatusWithPermissions | undefined | null): unknown {
+  if (!data || typeof data !== 'object') return undefined;
+  // Prefer the canonical flat arrays; fall back to either alias when only
+  // one is present. Also tolerate a nested `data` wrapper from older payloads.
+  const direct =
+    (data as Record<string, unknown>).permissions ??
+    (data as Record<string, unknown>).pageKeys;
+  if (direct !== undefined) return direct;
+  const nested = (data as Record<string, unknown>).data;
+  if (nested && typeof nested === 'object') {
+    const rec = nested as Record<string, unknown>;
+    return rec.permissions ?? rec.pageKeys;
+  }
+  return undefined;
+}
+
 function hasPagePermission(
-  permissions: PermissionEntry[] | undefined,
+  permissions: unknown,
   pageKey: string
 ): boolean {
-  if (!permissions || !Array.isArray(permissions)) return false;
-  return permissions.some((p) => {
-    if (typeof p === 'string') return p === pageKey;
-    if (p && typeof p === 'object' && 'pageKey' in p) return p.pageKey === pageKey;
+  const wanted = normalizeKey(pageKey);
+  if (!wanted) return false;
+  if (!permissions) return false;
+
+  // Tolerate a single string / single object instead of an array.
+  const list = Array.isArray(permissions) ? permissions : [permissions];
+
+  return list.some((p) => {
+    if (typeof p === 'string') return normalizeKey(p) === wanted;
+    if (p && typeof p === 'object') {
+      const rec = p as Record<string, unknown>;
+      const candidate =
+        normalizeKey(rec.pageKey) ??
+        normalizeKey(rec.key) ??
+        normalizeKey(rec.name) ??
+        // Some backends return { data: { pageKeys: [...] } } style nesting
+        // inside the array; unwrap one level.
+        (Array.isArray(rec.pageKeys)
+          ? (rec.pageKeys as unknown[]).some((k) => normalizeKey(k) === wanted)
+            ? wanted
+            : null
+          : null);
+      return candidate === wanted;
+    }
     return false;
   });
 }
@@ -71,11 +115,6 @@ export function PagePermissionGuard({ children, pageKey }: PagePermissionGuardPr
   const router = useRouter();
   const { data, isLoading, isError } = useGetAdminStatusQuery();
 
-  // Super Admin bypass: automatically grants access to every page.
-  if (data?.adminRole === 'SUPERADMIN') {
-    return <>{children}</>;
-  }
-
   // While the shared admin-status request is in flight, show the same spinner
   // styling so we never flash an "Access Denied" box prematurely.
   if (isLoading) {
@@ -94,8 +133,15 @@ export function PagePermissionGuard({ children, pageKey }: PagePermissionGuardPr
     return null;
   }
 
+  // Super Admin bypass: automatically grants access to every page.
+  // Case-insensitive so 'superadmin' / 'SUPER_ADMIN' style values still pass.
+  const role = typeof data?.adminRole === 'string' ? data.adminRole.toUpperCase().replace(/[^A-Z]/g, '') : '';
+  if (role === 'SUPERADMIN') {
+    return <>{children}</>;
+  }
+
   const typedData = data as unknown as AdminStatusWithPermissions;
-  const granted = hasPagePermission(typedData?.permissions, pageKey);
+  const granted = hasPagePermission(extractRawPermissions(typedData), pageKey);
 
   if (granted) {
     return <>{children}</>;
@@ -113,12 +159,12 @@ export function PagePermissionGuard({ children, pageKey }: PagePermissionGuardPr
         <p className="text-sm text-gray-500 mb-6">
           You do not have permission to view the {pageKey} section.
         </p>
-        <button
+        {/* <button
           onClick={() => router.replace('/admin')}
           className="w-full bg-[#68123D] hover:bg-[#520e30] text-white font-medium py-2 px-4 rounded transition-colors text-sm"
         >
           Return to Dashboard
-        </button>
+        </button> */}
       </div>
     </div>
   );
