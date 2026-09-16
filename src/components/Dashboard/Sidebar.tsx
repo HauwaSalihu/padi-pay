@@ -11,6 +11,7 @@ import {
   HiOutlineCog,
   HiOutlineCreditCard
 } from "react-icons/hi";
+import { MdGroups2 } from "react-icons/md";
 import { useGetProfileQuery, useGetAdminStatusQuery } from "@/services/padiApi/userApi";
 import { useLogoutMutation } from "@/services/padiApi/authApi";
 
@@ -59,6 +60,12 @@ export default function Sidebar({ onClose }: SidebarProps) {
       label: "Ajo Applications",
       icon: HiOutlineClipboardList,
       pageKey: "ajo",
+    },
+    {
+      href: "/dashboard/ajo-groups",
+      label: "Ajo Groups",
+      icon: MdGroups2,
+      pageKey: "ajo-groups",
     },
     {
       href: "/dashboard/transactions",
