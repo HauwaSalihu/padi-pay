@@ -10,38 +10,55 @@ import {
   HiOutlineUser,
   HiOutlineUsers,
   HiOutlineShieldCheck,
+  HiOutlineCalendar,
+  HiOutlineClock,
+  HiOutlineCheckCircle,
+  HiOutlineExclamationCircle,
 } from "react-icons/hi";
+import { TbCurrencyNaira } from "react-icons/tb";
 
 import {
-  useGetPendingAjoApplicationsQuery,
-  AjoMemberApplication,
-  useHandleAjoApplicationMutation,
+  useGetAjoGroupsQuery,
+  useGetAjoGroupDetailsQuery,
+  AjoGroup,
+  AjoGroupDetails,
 } from "@/services/padiApi/adminApi";
 
 import { PagePermissionGuard } from "@/components/AuthGuard";
 
-export default function AjoApplications() {
+export default function AjoGroupsPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [query, setQuery] = useState("");
 
-  const [sel, setSel] = useState<AjoMemberApplication | null>(null);
-  const [isImgExpanded, setIsImgExpanded] = useState(false);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(
+    null
+  );
 
-  const [confirmMode, setConfirmMode] = useState<
-    "approve" | "reject" | null
-  >(null);
+  const {
+    data,
+    isLoading,
+    isError,
+    refetch,
+  } = useGetAjoGroupsQuery({
+    page,
+    limit,
+  });
 
-  const { data, isLoading, isError, refetch } =
-    useGetPendingAjoApplicationsQuery({
-      page,
-      limit,
-    });
+  const {
+    data: selectedGroupData,
+    isLoading: isLoadingDetails,
+    isError: isDetailsError,
+    refetch: refetchDetails,
+  } = useGetAjoGroupDetailsQuery(
+    selectedGroupId as string,
+    {
+      skip: !selectedGroupId,
+    }
+  );
 
-  const [handleAjoApplication, { isLoading: isMutating }] =
-    useHandleAjoApplicationMutation();
-
-  const apps = data?.data || [];
+  const groups = data?.data || [];
+  console.log("groups", groups);
 
   const meta = data?.meta || {
     page: 1,
@@ -50,42 +67,34 @@ export default function AjoApplications() {
     totalPages: 0,
   };
 
-  const handleDecision = async (approve: boolean) => {
-    if (!sel) return;
+  const selectedGroup = selectedGroupData?.data;
 
-    try {
-      await handleAjoApplication({
-        memberId: sel.id,
-        approve,
-      }).unwrap();
+  const filtered = groups.filter((group) => {
+    const search = query.toLowerCase().trim();
 
-      closeDetails();
-    } catch (err: any) {
-      console.error("Failed to process Ajo group member:", err);
-
-      alert(
-        err?.data?.message ||
-          `Failed to ${approve ? "approve" : "reject"} group member. Please try again.`
-      );
-    }
-  };
-
-  const filtered = apps.filter((a) => {
-    const search = query.toLowerCase();
+    if (!search) return true;
 
     return (
-      `${a.user.first_name} ${a.user.last_name}`
-        .toLowerCase()
-        .includes(search) ||
-      a.ajo.name.toLowerCase().includes(search)
+      group.name?.toLowerCase().includes(search) ||
+      group.description?.toLowerCase().includes(search) ||
+      group.status?.toLowerCase().includes(search) ||
+      group.privacy?.toLowerCase().includes(search) ||
+      group.admin?.first_name?.toLowerCase().includes(search) ||
+      group.admin?.last_name?.toLowerCase().includes(search) ||
+      group.admin?.email?.toLowerCase().includes(search) ||
+      group.id?.toLowerCase().includes(search)
     );
   });
 
-  const fmt = (value?: number | null) =>
-    value == null ? "₦0" : `₦${value.toLocaleString()}`;
+  const fmt = (value?: number | string | null) => {
+    if (value == null) return "₦0";
 
-  const isPdf = (url?: string) =>
-    !!url && url.toLowerCase().includes(".pdf");
+    const amount = Number(value);
+
+    if (Number.isNaN(amount)) return "₦0";
+
+    return `₦${amount.toLocaleString("en-NG")}`;
+  };
 
   const getInitials = (first?: string, last?: string) => {
     const f = first ? first.charAt(0) : "";
@@ -94,10 +103,68 @@ export default function AjoApplications() {
     return `${f}${l}`.toUpperCase() || "AG";
   };
 
+  const formatStatus = (status?: string) => {
+    if (!status) return "Unknown";
+
+    return status
+      .replaceAll("_", " ")
+      .toLowerCase()
+      .replace(/\b\w/g, (char) => char.toUpperCase());
+  };
+
+  const formatFrequency = (frequency?: string) => {
+    if (!frequency) return "Not specified";
+
+    return (
+      frequency.charAt(0).toUpperCase() +
+      frequency.slice(1).toLowerCase()
+    );
+  };
+
+  const getStatusClass = (status?: string) => {
+    switch (status) {
+      case "ACTIVE":
+        return "bg-emerald-50 text-emerald-700 border-emerald-100";
+
+      case "PENDING_ACTIVATION":
+        return "bg-amber-50 text-amber-700 border-amber-100";
+
+      case "COMPLETED":
+        return "bg-blue-50 text-blue-700 border-blue-100";
+
+      case "CANCELLED":
+        return "bg-rose-50 text-rose-700 border-rose-100";
+
+      default:
+        return "bg-gray-50 text-gray-600 border-gray-100";
+    }
+  };
+
+  const formatDate = (date?: string) => {
+    if (!date) return "N/A";
+
+    return new Date(date).toLocaleDateString("en-NG", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  const formatDateTime = (date?: string) => {
+    if (!date) return "N/A";
+
+    return new Date(date).toLocaleString("en-NG", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+  };
+
+  const openDetails = (group: AjoGroup) => {
+    setSelectedGroupId(group.id);
+  };
+
   const closeDetails = () => {
-    setSel(null);
-    setIsImgExpanded(false);
-    setConfirmMode(null);
+    setSelectedGroupId(null);
   };
 
   return (
@@ -132,7 +199,8 @@ export default function AjoApplications() {
             </h1>
 
             <p className="text-sm text-[#525866]/80 max-w-xl">
-              Review and manage Ajo groups, group members, contributions.
+              Review Ajo groups, members, contributions, cycles, payouts,
+              and group settings.
             </p>
           </div>
 
@@ -141,15 +209,11 @@ export default function AjoApplications() {
               <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#68123D]/10 text-[#68123D] border border-[#68123D]/15 backdrop-blur-md shadow-sm">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#68123D] animate-pulse" />
 
-                {meta.total} Ajo Groups Pending
+                {meta.total} Ajo Group{meta.total === 1 ? "" : "s"}
               </span>
             </div>
           )}
         </div>
-
-        {/* =====================================================
-            SEARCH & CONFIGURATION
-        ====================================================== */}
 
         <div className="bg-white/45 backdrop-blur-md border border-white/60 p-4 rounded-2xl flex flex-col sm:flex-row gap-4 justify-between items-center shadow-sm">
           <div className="relative w-full sm:max-w-md">
@@ -160,9 +224,12 @@ export default function AjoApplications() {
 
             <input
               type="text"
-              placeholder="Search Ajo group or member..."
+              placeholder="Search Ajo group or admin..."
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setPage(1);
+              }}
               className="w-full pl-10 pr-4 py-2.5 text-sm bg-white/40 border border-gray-200/50 hover:bg-white/60 focus:bg-white/80 focus:border-[#68123D]/40 focus:ring-4 focus:ring-[#68123D]/5 rounded-xl outline-none transition-all shadow-inner placeholder-gray-400 text-gray-800"
             />
           </div>
@@ -221,7 +288,7 @@ export default function AjoApplications() {
 
             <button
               onClick={() => refetch()}
-              className="bg-[#68123D] hover:bg-[#68123D]/95 active:bg-[#68123D] text-white px-5 py-2.5 rounded-xl text-xs font-semibold shadow-sm transition-all cursor-pointer"
+              className="bg-[#68123D] hover:bg-[#68123D]/95 text-white px-5 py-2.5 rounded-xl text-xs font-semibold shadow-sm transition-all cursor-pointer"
             >
               Retry Connection
             </button>
@@ -237,7 +304,7 @@ export default function AjoApplications() {
             </h3>
 
             <p className="text-xs text-gray-400 max-w-xs">
-              There are no pending Ajo groups matching your search.
+              No Ajo groups match your current search.
             </p>
           </div>
         ) : (
@@ -252,11 +319,7 @@ export default function AjoApplications() {
                   <thead>
                     <tr className="border-b border-gray-100/50 bg-gray-50/20 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
                       <th className="py-4.5 px-6 font-medium">
-                        Member ID
-                      </th>
-
-                      <th className="py-4.5 px-6 font-medium">
-                        Group Member
+                        Group ID
                       </th>
 
                       <th className="py-4.5 px-6 font-medium">
@@ -264,15 +327,15 @@ export default function AjoApplications() {
                       </th>
 
                       <th className="py-4.5 px-6 font-medium">
-                        Target
+                        Admin
                       </th>
 
                       <th className="py-4.5 px-6 font-medium">
-                        Contribution / Frequency
+                        Status
                       </th>
 
                       <th className="py-4.5 px-6 font-medium">
-                        Account Type
+                        Created
                       </th>
 
                       <th className="py-4.5 px-6 font-medium text-right">
@@ -282,86 +345,100 @@ export default function AjoApplications() {
                   </thead>
 
                   <tbody className="divide-y divide-gray-100/30 text-sm">
-                    {filtered.map((a) => (
+                    {filtered.map((group) => (
                       <tr
-                        key={a.id}
+                        key={group.id}
                         className="hover:bg-white/45 transition-all duration-150 border-b border-gray-100/40 last:border-0 group"
                       >
+                        {/* GROUP ID */}
+
                         <td className="py-4.5 px-6">
                           <span className="text-xs font-mono text-gray-400 bg-gray-50/50 px-2 py-1 rounded-md border border-gray-100/30 group-hover:bg-white transition-all">
-                            {a.id.substring(0, 8)}...
+                            {group.id.substring(0, 8)}...
                           </span>
                         </td>
+
+                        {/* GROUP */}
 
                         <td className="py-4.5 px-6">
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#68123D]/10 to-[#68123D]/5 text-[#68123D] flex items-center justify-center text-xs font-bold border border-[#68123D]/10 shadow-sm transition-transform duration-200 group-hover:scale-105">
-                              {getInitials(
-                                a.user.first_name,
-                                a.user.last_name
-                              )}
+                            <div className="w-9 h-9 rounded-xl bg-[#68123D]/10 text-[#68123D] flex items-center justify-center border border-[#68123D]/10 shadow-sm transition-transform duration-200 group-hover:scale-105">
+                              <HiOutlineUsers size={17} />
                             </div>
 
-                            <div>
-                              <div className="font-semibold text-gray-800 text-sm leading-tight">
-                                {a.user.first_name}{" "}
-                                {a.user.last_name}
+                            <div className="min-w-0">
+                              <div className="font-semibold text-gray-800 text-sm leading-tight truncate max-w-[180px]">
+                                {group.name}
                               </div>
 
                               <div className="text-xs text-gray-400 mt-0.5">
-                                {a.user.email}
+                                Ajo savings group
                               </div>
                             </div>
                           </div>
                         </td>
 
-                        <td className="py-4.5 px-6">
-                          <div className="font-semibold text-gray-700">
-                            {a.ajo.name}
-                          </div>
-
-                          <div className="text-xs text-gray-400 mt-0.5">
-                            {a.ajo.groupSize} members
-                          </div>
-                        </td>
+                        {/* ADMIN */}
 
                         <td className="py-4.5 px-6">
-                          <span className="font-bold text-gray-950 text-sm">
-                            {fmt(a.ajo.targetAmount)}
-                          </span>
+                          {group.admin ? (
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-8 h-8 rounded-full bg-[#68123D]/10 text-[#68123D] flex items-center justify-center text-[10px] font-bold border border-[#68123D]/10">
+                                {getInitials(
+                                  group.admin.first_name,
+                                  group.admin.last_name
+                                )}
+                              </div>
+
+                              <div className="min-w-0">
+                                <div className="font-semibold text-gray-700 truncate max-w-[150px]">
+                                  {group.admin.first_name}{" "}
+                                  {group.admin.last_name}
+                                </div>
+
+                                <div className="text-xs text-gray-400 truncate max-w-[150px]">
+                                  {group.admin.email}
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-xs font-mono text-gray-400">
+                              {group.adminId
+                                ? `${group.adminId.substring(0, 8)}...`
+                                : "N/A"}
+                            </span>
+                          )}
                         </td>
 
-                        <td className="py-4.5 px-6">
-                          <div className="font-semibold text-gray-700">
-                            {fmt(
-                              a.contributionAmount ||
-                                a.ajo.contributionAmount
-                            )}
-                          </div>
-
-                          <div className="text-xs text-gray-400 mt-0.5 capitalize">
-                            {a.ajo.frequency.toLowerCase()}
-                          </div>
-                        </td>
+                        {/* STATUS */}
 
                         <td className="py-4.5 px-6">
                           <span
-                            className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
-                              a.linkedAccountType === "BUSINESS"
-                                ? "bg-indigo-50/50 text-indigo-700 border-indigo-100/60"
-                                : "bg-emerald-50/50 text-emerald-700 border-emerald-100/60"
-                            }`}
+                            className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${getStatusClass(
+                              group.status
+                            )}`}
                           >
-                            {a.linkedAccountType}
+                            {formatStatus(group.status)}
                           </span>
                         </td>
 
+                        {/* CREATED */}
+
+                        <td className="py-4.5 px-6">
+                          <span className="text-xs font-medium text-gray-600">
+                            {formatDate(group.createdAt)}
+                          </span>
+                        </td>
+
+                        {/* ACTION */}
+
                         <td className="py-4.5 px-6 text-right">
                           <button
-                            onClick={() => setSel(a)}
+                            onClick={() => openDetails(group)}
                             className="px-4 py-2 rounded-xl text-xs font-semibold bg-neutral-900 text-white hover:bg-neutral-800 active:bg-neutral-950 transition-all shadow-sm inline-flex items-center gap-1.5 cursor-pointer border-0"
                           >
                             View Group
+
                             <HiOutlineExternalLink
                               size={13}
                               className="opacity-80"
@@ -374,12 +451,11 @@ export default function AjoApplications() {
                 </table>
               </div>
 
-              {/* TABLE PAGINATION */}
+              {/* PAGINATION */}
 
               <div className="px-6 py-4.5 bg-white/20 border-t border-gray-100/50 flex items-center justify-between text-xs text-gray-500 font-medium">
                 <span>
-                  Page {meta.page} of {meta.totalPages} ({meta.total}{" "}
-                  total)
+                  Page {meta.page} of {meta.totalPages} ({meta.total} total)
                 </span>
 
                 <div className="flex gap-2">
@@ -388,7 +464,7 @@ export default function AjoApplications() {
                       setPage((p) => Math.max(1, p - 1))
                     }
                     disabled={page === 1}
-                    className="p-2 bg-white/50 border border-gray-200/50 hover:bg-white hover:border-gray-300 active:bg-gray-100 rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed text-gray-600 shadow-sm cursor-pointer"
+                    className="p-2 bg-white/50 border border-gray-200/50 hover:bg-white hover:border-gray-300 rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed text-gray-600 shadow-sm cursor-pointer"
                   >
                     <HiOutlineChevronLeft size={16} />
                   </button>
@@ -399,8 +475,11 @@ export default function AjoApplications() {
                         Math.min(meta.totalPages, p + 1)
                       )
                     }
-                    disabled={page >= meta.totalPages}
-                    className="p-2 bg-white/50 border border-gray-200/50 hover:bg-white hover:border-gray-300 active:bg-gray-100 rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed text-gray-600 shadow-sm cursor-pointer"
+                    disabled={
+                      page >= meta.totalPages ||
+                      meta.totalPages === 0
+                    }
+                    className="p-2 bg-white/50 border border-gray-200/50 hover:bg-white hover:border-gray-300 rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed text-gray-600 shadow-sm cursor-pointer"
                   >
                     <HiOutlineChevronRight size={16} />
                   </button>
@@ -413,103 +492,107 @@ export default function AjoApplications() {
             ================================================== */}
 
             <div className="space-y-4 md:hidden mt-6">
-              {filtered.map((a) => (
+              {filtered.map((group) => (
                 <div
-                  key={a.id}
+                  key={group.id}
                   className="bg-white/60 backdrop-blur-md border border-white/70 rounded-2xl p-5 shadow-sm space-y-4 hover:bg-white/80 transition-all duration-200"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#68123D]/10 to-[#68123D]/5 text-[#68123D] flex items-center justify-center text-xs font-bold border border-[#68123D]/10 shadow-sm">
-                        {getInitials(
-                          a.user.first_name,
-                          a.user.last_name
-                        )}
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 shrink-0 rounded-xl bg-[#68123D]/10 text-[#68123D] flex items-center justify-center border border-[#68123D]/10">
+                        <HiOutlineUsers size={18} />
                       </div>
 
-                      <div>
-                        <h3 className="font-semibold text-gray-800 text-sm leading-tight">
-                          {a.user.first_name} {a.user.last_name}
+                      <div className="min-w-0">
+                        <h3 className="font-semibold text-gray-800 text-sm leading-tight truncate">
+                          {group.name}
                         </h3>
 
                         <p className="text-xs text-gray-400 mt-0.5">
-                          {a.user.email}
+                          Ajo savings group
                         </p>
                       </div>
                     </div>
 
-                    <span className="text-[10px] font-mono text-gray-400 bg-gray-100/50 px-2 py-1 rounded-md border border-gray-100/30">
-                      #{a.id.substring(0, 8)}
+                    <span className="shrink-0 text-[10px] font-mono text-gray-400 bg-gray-100/50 px-2 py-1 rounded-md border border-gray-100/30">
+                      #{group.id.substring(0, 8)}
                     </span>
                   </div>
+
+                  {/* ADMIN */}
+
+                  <div className="flex items-center gap-3 border-t border-gray-100/50 pt-3">
+                    {group.admin ? (
+                      <>
+                        <div className="w-8 h-8 rounded-full bg-[#68123D]/10 text-[#68123D] flex items-center justify-center text-[10px] font-bold border border-[#68123D]/10">
+                          {getInitials(
+                            group.admin.first_name,
+                            group.admin.last_name
+                          )}
+                        </div>
+
+                        <div className="min-w-0">
+                          <span className="text-[10px] text-gray-400 block font-medium uppercase tracking-wider">
+                            Group Admin
+                          </span>
+
+                          <span className="font-semibold text-gray-700 text-xs truncate block">
+                            {group.admin.first_name}{" "}
+                            {group.admin.last_name}
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <div>
+                        <span className="text-[10px] text-gray-400 block font-medium uppercase tracking-wider">
+                          Admin ID
+                        </span>
+
+                        <span className="font-mono text-xs text-gray-600">
+                          {group.adminId
+                            ? `${group.adminId.substring(0, 12)}...`
+                            : "N/A"}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* DETAILS */}
 
                   <div className="grid grid-cols-2 gap-y-3.5 gap-x-4 border-t border-b border-gray-100/50 py-3.5 text-xs">
                     <div>
                       <span className="text-gray-400 block font-medium">
-                        Ajo Group
+                        Status
+                      </span>
+
+                      <span
+                        className={`inline-flex mt-1 px-2 py-1 rounded-full text-[10px] font-semibold border ${getStatusClass(
+                          group.status
+                        )}`}
+                      >
+                        {formatStatus(group.status)}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-gray-400 block font-medium">
+                        Created
                       </span>
 
                       <span className="font-semibold text-gray-700 mt-0.5 block">
-                        {a.ajo.name}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-gray-400 block font-medium">
-                        Target Amount
-                      </span>
-
-                      <span className="font-bold text-gray-950 mt-0.5 block">
-                        {fmt(a.ajo.targetAmount)}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-gray-400 block font-medium">
-                        Contribution
-                      </span>
-
-                      <span className="font-semibold text-gray-700 mt-0.5 block">
-                        {fmt(
-                          a.contributionAmount ||
-                            a.ajo.contributionAmount
-                        )}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-gray-400 block font-medium">
-                        Frequency
-                      </span>
-
-                      <span className="font-semibold text-gray-700 mt-0.5 block capitalize">
-                        {a.ajo.frequency.toLowerCase()}
+                        {formatDate(group.createdAt)}
                       </span>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between pt-1">
-                    <span
-                      className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
-                        a.linkedAccountType === "BUSINESS"
-                          ? "bg-indigo-50/50 text-indigo-700 border-indigo-100/60"
-                          : "bg-emerald-50/50 text-emerald-700 border-emerald-100/60"
-                      }`}
-                    >
-                      {a.linkedAccountType}
-                    </span>
+                  <button
+                    onClick={() => openDetails(group)}
+                    className="w-full px-4 py-2.5 rounded-xl text-xs font-semibold bg-neutral-900 text-white hover:bg-neutral-800 transition-all shadow-sm inline-flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    View Group
 
-                    <button
-                      onClick={() => setSel(a)}
-                      className="px-4 py-2 rounded-xl text-xs font-semibold bg-neutral-900 text-white hover:bg-neutral-800 active:bg-neutral-950 transition-all shadow-sm inline-flex items-center gap-1.5 cursor-pointer border-0"
-                    >
-                      View Group
-                      <HiOutlineExternalLink
-                        size={13}
-                        className="opacity-80"
-                      />
-                    </button>
-                  </div>
+                    <HiOutlineExternalLink size={13} />
+                  </button>
                 </div>
               ))}
 
@@ -526,7 +609,7 @@ export default function AjoApplications() {
                       setPage((p) => Math.max(1, p - 1))
                     }
                     disabled={page === 1}
-                    className="p-2.5 bg-white border border-gray-200/50 hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed text-gray-600 shadow-sm cursor-pointer"
+                    className="p-2.5 bg-white border border-gray-200/50 rounded-xl disabled:opacity-30 disabled:cursor-not-allowed text-gray-600 shadow-sm cursor-pointer"
                   >
                     <HiOutlineChevronLeft size={16} />
                   </button>
@@ -537,8 +620,11 @@ export default function AjoApplications() {
                         Math.min(meta.totalPages, p + 1)
                       )
                     }
-                    disabled={page >= meta.totalPages}
-                    className="p-2.5 bg-white border border-gray-200/50 hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed text-gray-600 shadow-sm cursor-pointer"
+                    disabled={
+                      page >= meta.totalPages ||
+                      meta.totalPages === 0
+                    }
+                    className="p-2.5 bg-white border border-gray-200/50 rounded-xl disabled:opacity-30 disabled:cursor-not-allowed text-gray-600 shadow-sm cursor-pointer"
                   >
                     <HiOutlineChevronRight size={16} />
                   </button>
@@ -549,467 +635,561 @@ export default function AjoApplications() {
         )}
 
         {/* =====================================================
-            AJO GROUP DETAILS DRAWER
+            DETAILS DRAWER
         ====================================================== */}
 
-        {sel && (
+        {selectedGroupId && (
           <>
             {/* BACKDROP */}
 
             <div
-              className="fixed inset-0 bg-black/15 backdrop-blur-md z-40 transition-opacity duration-300"
+              className="fixed inset-0 bg-black/15 backdrop-blur-md z-40"
               onClick={closeDetails}
             />
 
             {/* DRAWER */}
 
-            <div className="fixed top-4 right-4 bottom-4 w-[calc(100%-2rem)] md:w-full md:max-w-xl bg-white/75 backdrop-blur-2xl border border-white/50 shadow-[0_24px_60px_rgba(0,0,0,0.12)] rounded-3xl z-50 flex flex-col overflow-hidden drawer-animate text-sm text-[#181B25]">
-              
-              {/* DRAWER HEADER */}
+            <div className="fixed top-4 right-4 bottom-4 w-[calc(100%-2rem)] md:w-full md:max-w-2xl bg-white/90 backdrop-blur-2xl border border-white/50 shadow-[0_24px_60px_rgba(0,0,0,0.12)] rounded-3xl z-50 flex flex-col overflow-hidden drawer-animate text-sm text-[#181B25]">
 
               <div className="flex justify-between items-center border-b border-gray-100/50 p-6">
-                <div className="space-y-1">
+                <div className="space-y-1 min-w-0">
                   <h2 className="text-xl font-semibold tracking-tight text-gray-900">
                     Ajo Group Details
                   </h2>
 
-                  <div className="flex items-center gap-1.5 text-xs text-gray-400 font-mono">
-                    <span>Member ID:</span>
-
-                    <span className="bg-gray-100/80 px-1.5 py-0.5 rounded text-gray-500 font-medium">
-                      {sel.id}
-                    </span>
+                  <div className="text-xs text-gray-400 font-mono truncate">
+                    Group ID: {selectedGroupId}
                   </div>
                 </div>
 
                 <button
                   onClick={closeDetails}
-                  className="p-2 bg-gray-100/50 hover:bg-gray-100 text-gray-500 hover:text-gray-800 rounded-full transition-all border border-gray-200/20 cursor-pointer"
+                  className="shrink-0 p-2 bg-gray-100/50 hover:bg-gray-100 text-gray-500 hover:text-gray-800 rounded-full transition-all border border-gray-200/20 cursor-pointer"
                 >
                   <HiOutlineX size={18} />
                 </button>
               </div>
 
-              {/* DRAWER CONTENT */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                {isLoadingDetails ? (
+                  <div className="flex flex-col items-center justify-center py-24">
+                    <div className="w-8 h-8 rounded-full border-2 border-neutral-200 border-t-[#68123D] animate-spin mb-4" />
 
-              <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin">
-                
-                {/* =================================================
-                    GROUP MEMBER
-                ================================================== */}
-
-                <div className="bg-white/40 border border-gray-100/60 rounded-2xl p-5 space-y-4 shadow-sm backdrop-blur-sm">
-                  <div className="flex items-center gap-2 border-b border-gray-100/50 pb-2.5">
-                    <div className="p-1.5 bg-[#68123D]/5 text-[#68123D] rounded-lg">
-                      <HiOutlineUser size={16} />
+                    <p className="text-sm font-medium text-gray-500">
+                      Loading group details...
+                    </p>
+                  </div>
+                ) : isDetailsError ? (
+                  <div className="flex flex-col items-center justify-center py-20 text-center">
+                    <div className="w-12 h-12 rounded-full bg-red-50 text-red-500 flex items-center justify-center mb-4">
+                      <HiOutlineX size={22} />
                     </div>
 
-                    <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                      Group Member
+                    <h3 className="text-sm font-semibold text-gray-800 mb-1">
+                      Failed to load group
                     </h3>
+
+                    <p className="text-xs text-gray-400 max-w-xs mb-5">
+                      We could not retrieve the complete details for this
+                      Ajo group.
+                    </p>
+
+                    <button
+                      onClick={() => refetchDetails()}
+                      className="bg-[#68123D] text-white px-5 py-2.5 rounded-xl text-xs font-semibold cursor-pointer"
+                    >
+                      Retry
+                    </button>
                   </div>
+                ) : selectedGroup ? (
+                  <>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                    <div>
-                      <span className="text-gray-400 block font-medium mb-0.5">
-                        Full Name
-                      </span>
-
-                      <span className="text-sm font-semibold text-gray-800">
-                        {sel.user.first_name} {sel.user.last_name}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-gray-400 block font-medium mb-0.5">
-                        Email Address
-                      </span>
-
-                      <span className="text-sm font-semibold text-gray-800 break-all">
-                        {sel.user.email}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-gray-400 block font-medium mb-0.5">
-                        Phone Number
-                      </span>
-
-                      <span className="text-sm font-semibold text-gray-800">
-                        {sel.user.phone}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-gray-400 block font-medium mb-0.5">
-                        Gender & Date of Birth
-                      </span>
-
-                      <span className="text-sm font-semibold text-gray-800">
-                        {sel.user.gender || "N/A"}
-
-                        {sel.user.date_of_birth
-                          ? ` • ${new Date(
-                              sel.user.date_of_birth
-                            ).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })}`
-                          : ""}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* =================================================
-                    AJO GROUP
-                ================================================== */}
-
-                <div className="bg-white/40 border border-gray-100/60 rounded-2xl p-5 space-y-4 shadow-sm backdrop-blur-sm">
-                  <div className="flex items-center gap-2 border-b border-gray-100/50 pb-2.5">
-                    <div className="p-1.5 bg-[#68123D]/5 text-[#68123D] rounded-lg">
-                      <HiOutlineUsers size={16} />
-                    </div>
-
-                    <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                      Ajo Group
-                    </h3>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                    <div className="sm:col-span-2">
-                      <span className="text-gray-400 block font-medium mb-0.5">
-                        Group Name
-                      </span>
-
-                      <span className="text-sm font-semibold text-gray-800">
-                        {sel.ajo.name}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-gray-400 block font-medium mb-0.5">
-                        Target Amount
-                      </span>
-
-                      <span className="text-sm font-bold text-gray-900">
-                        {fmt(sel.ajo.targetAmount)}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-gray-400 block font-medium mb-0.5">
-                        Group Size
-                      </span>
-
-                      <span className="text-sm font-semibold text-gray-800">
-                        {sel.ajo.groupSize} members
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-gray-400 block font-medium mb-0.5">
-                        Contribution & Frequency
-                      </span>
-
-                      <span className="text-sm font-semibold text-gray-800">
-                        {fmt(
-                          sel.contributionAmount ||
-                            sel.ajo.contributionAmount
-                        )}{" "}
-                        /{" "}
-                        <span className="capitalize">
-                          {sel.ajo.frequency.toLowerCase()}
-                        </span>
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-gray-400 block font-medium mb-0.5">
-                        Schedule Details
-                      </span>
-
-                      {/* <span className="text-sm font-semibold text-gray-800">
-                        {sel.contributionSchedule}
-                      </span> */}
-                    </div>
-                  </div>
-                </div>
-
-                {/* =================================================
-                    MEMBER VERIFICATION
-                ================================================== */}
-
-                <div className="bg-white/40 border border-gray-100/60 rounded-2xl p-5 space-y-4 shadow-sm backdrop-blur-sm">
-                  <div className="flex items-center gap-2 border-b border-gray-100/50 pb-2.5">
-                    <div className="p-1.5 bg-[#68123D]/5 text-[#68123D] rounded-lg">
-                      <HiOutlineShieldCheck size={16} />
-                    </div>
-
-                    <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                      Member Verification
-                    </h3>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs mb-2">
-                    <div>
-                      <span className="text-gray-400 block font-medium mb-0.5">
-                        Linked Account Type
-                      </span>
-
-                      <span
-                        className={`inline-flex px-2.5 py-0.5 mt-0.5 rounded-full text-[10px] font-semibold border ${
-                          sel.linkedAccountType === "BUSINESS"
-                            ? "bg-indigo-50/50 text-indigo-700 border-indigo-100/60"
-                            : "bg-emerald-50/50 text-emerald-700 border-emerald-100/60"
-                        }`}
-                      >
-                        {sel.linkedAccountType}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-gray-400 block font-medium mb-0.5">
-                        Requested Hands
-                      </span>
-
-                      <span className="text-sm font-semibold text-gray-800">
-                        {sel.hands || 1}{" "}
-                        {(sel.hands || 1) > 1 ? "Hands" : "Hand"}
-                      </span>
-                    </div>
-
-                    {sel.linkedAccountType === "BUSINESS" && (
-                      <div className="sm:col-span-2 grid grid-cols-2 gap-4 border-t border-gray-100/30 pt-3">
-                        <div>
-                          <span className="text-gray-400 block font-medium mb-0.5">
-                            Business Name
-                          </span>
-
-                          <span className="text-sm font-semibold text-gray-800">
-                            {sel.businessName}
-                          </span>
+                    <div className="bg-[#68123D]/5 border border-[#68123D]/10 rounded-2xl p-5">
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 shrink-0 rounded-2xl bg-[#68123D]/10 text-[#68123D] flex items-center justify-center">
+                          <HiOutlineUsers size={22} />
                         </div>
 
-                        <div>
-                          <span className="text-gray-400 block font-medium mb-0.5">
-                            CAC Number
-                          </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="text-lg font-bold text-gray-900">
+                              {selectedGroup.name}
+                            </h3>
 
-                          <span className="text-sm font-semibold text-gray-800">
-                            {sel.cacNumber}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* BANK STATEMENT */}
-
-                  <div className="border-t border-gray-100/50 pt-4 space-y-2">
-                    <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider block">
-                      Group Member Bank Statement
-                    </span>
-
-                    {sel.bankStatementURL ? (
-                      isPdf(sel.bankStatementURL) ? (
-                        <div className="space-y-2">
-                          <div className="border border-gray-200/40 rounded-2xl overflow-hidden bg-gray-50/50 shadow-inner">
-                            <iframe
-                              src={sel.bankStatementURL}
-                              className="w-full h-44 border-0 bg-white"
-                              title="Group Member Bank Statement"
-                            />
+                            <span
+                              className={`px-2.5 py-1 rounded-full text-[10px] font-semibold border ${getStatusClass(
+                                selectedGroup.status
+                              )}`}
+                            >
+                              {formatStatus(selectedGroup.status)}
+                            </span>
                           </div>
 
-                          <a
-                            href={sel.bankStatementURL}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-xs text-[#68123D] hover:text-[#68123D]/80 font-semibold flex items-center gap-1.5 justify-end transition-all group cursor-pointer"
-                          >
-                            Open Full Statement
+                          <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                            {selectedGroup.description ||
+                              "No description provided."}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
 
-                            <HiOutlineExternalLink
-                              size={12}
-                              className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all"
-                            />
-                          </a>
+                    <DetailSection
+                      icon={<HiOutlineUsers size={16} />}
+                      title="Group Overview"
+                    >
+                      <div className="grid grid-cols-2 gap-4">
+                        <DetailItem
+                          label="Group Size"
+                          value={`${selectedGroup.groupSize ?? 0} members`}
+                        />
+
+                        <DetailItem
+                          label="Privacy"
+                          value={
+                            selectedGroup.privacy
+                              ? formatStatus(selectedGroup.privacy)
+                              : "N/A"
+                          }
+                        />
+
+                        <DetailItem
+                          label="Requires Approval"
+                          value={
+                            selectedGroup.requiresApproval
+                              ? "Yes"
+                              : "No"
+                          }
+                        />
+
+                        <DetailItem
+                          label="Created"
+                          value={formatDate(selectedGroup.createdAt)}
+                        />
+                      </div>
+                    </DetailSection>
+
+                    <DetailSection
+                      icon={<TbCurrencyNaira size={16} />}
+                      title="Financial Details"
+                    >
+                      <div className="grid grid-cols-2 gap-4">
+                        <DetailItem
+                          label="Contribution"
+                          value={fmt(
+                            selectedGroup.contributionAmount
+                          )}
+                          highlight
+                        />
+
+                        <DetailItem
+                          label="Target Amount"
+                          value={fmt(selectedGroup.targetAmount)}
+                          highlight
+                        />
+
+                        <DetailItem
+                          label="Frequency"
+                          value={formatFrequency(
+                            selectedGroup.frequency
+                          )}
+                        />
+
+                        <DetailItem
+                          label="Total Cycles"
+                          value={
+                            selectedGroup.totalCycles != null
+                              ? String(selectedGroup.totalCycles)
+                              : "N/A"
+                          }
+                        />
+
+                        <div className="col-span-2">
+                          <DetailItem
+                            label="Contribution Schedule"
+                            value={
+                              selectedGroup.contributionSchedule ||
+                              "Not specified"
+                            }
+                          />
+                        </div>
+                      </div>
+                    </DetailSection>
+
+                    <DetailSection
+                      icon={<HiOutlineUser size={16} />}
+                      title="Group Admin"
+                    >
+                      {selectedGroup.admin ? (
+                        <div className="flex items-center gap-3">
+                          <div className="w-11 h-11 rounded-full bg-[#68123D]/10 text-[#68123D] flex items-center justify-center text-xs font-bold border border-[#68123D]/10">
+                            {getInitials(
+                              selectedGroup.admin.first_name,
+                              selectedGroup.admin.last_name
+                            )}
+                          </div>
+
+                          <div>
+                            <div className="font-semibold text-gray-800">
+                              {selectedGroup.admin.first_name}{" "}
+                              {selectedGroup.admin.last_name}
+                            </div>
+
+                            <div className="text-xs text-gray-400">
+                              {selectedGroup.admin.email}
+                            </div>
+
+                            {selectedGroup.admin.phone && (
+                              <div className="text-xs text-gray-400 mt-0.5">
+                                {selectedGroup.admin.phone}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       ) : (
-                        <div className="space-y-2">
-                          <div
-                            onClick={() => setIsImgExpanded(true)}
-                            className="border border-gray-200/40 rounded-2xl p-2 flex justify-center bg-white/80 cursor-zoom-in hover:shadow-md transition-all group overflow-hidden"
-                          >
-                            <img
-                              src={sel.bankStatementURL}
-                              alt="Group Member Bank Statement"
-                              className="max-h-40 object-contain rounded-xl group-hover:scale-[1.02] transition-all duration-300"
-                            />
-                          </div>
-
-                          <div className="flex justify-between items-center text-xs">
-                            <span className="text-gray-400">
-                              Click image to enlarge
-                            </span>
-
-                            <a
-                              href={sel.bankStatementURL}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-xs text-[#68123D] hover:text-[#68123D]/80 font-semibold flex items-center gap-1.5 transition-all group cursor-pointer"
-                            >
-                              Open Original Statement
-
-                              <HiOutlineExternalLink
-                                size={12}
-                                className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all"
-                              />
-                            </a>
-                          </div>
+                        <div className="text-xs text-gray-400">
+                          Admin information unavailable.
                         </div>
-                      )
-                    ) : (
-                      <div className="py-6 px-4 bg-amber-50/30 border border-amber-100/40 rounded-xl text-center">
-                        <p className="text-xs font-semibold text-amber-700">
-                          No bank statement attached
-                        </p>
+                      )}
+                    </DetailSection>
 
-                        <p className="text-[10px] text-amber-600/70 mt-0.5">
-                          This group member has not uploaded a bank statement.
-                        </p>
+                    <DetailSection
+                      icon={<HiOutlineUsers size={16} />}
+                      title={`Members (${
+                        selectedGroup.ajoMembers?.length || 0
+                      })`}
+                    >
+                      {selectedGroup.ajoMembers &&
+                      selectedGroup.ajoMembers.length > 0 ? (
+                        <div className="space-y-3">
+                          {selectedGroup.ajoMembers.map((member) => (
+                            <div
+                              key={member.id}
+                              className="flex items-center justify-between gap-3 p-3 bg-white/70 border border-gray-100 rounded-xl"
+                            >
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div className="w-9 h-9 shrink-0 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-[10px] font-bold">
+                                  {getInitials(
+                                    member.first_name,
+                                    member.last_name
+                                  )}
+                                </div>
+
+                                <div className="min-w-0">
+                                  <div className="font-semibold text-gray-700 text-xs truncate">
+                                    {member.first_name}{" "}
+                                    {member.last_name}
+                                  </div>
+
+                                  <div className="text-[10px] text-gray-400 truncate">
+                                    {member.email}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="text-right shrink-0">
+                                <div className="text-xs font-bold text-gray-800">
+                                  {fmt(member.contributionAmount)}
+                                </div>
+
+                                <div className="text-[10px] text-gray-400">
+                                  {formatStatus(member.status)}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <EmptyState text="No members have joined this group yet." />
+                      )}
+                    </DetailSection>
+
+                    <DetailSection
+                      icon={<HiOutlineCalendar size={16} />}
+                      title={`Cycles (${
+                        selectedGroup.ajoCycles?.length || 0
+                      })`}
+                    >
+                      {selectedGroup.ajoCycles &&
+                      selectedGroup.ajoCycles.length > 0 ? (
+                        <div className="space-y-3">
+                          {selectedGroup.ajoCycles.map((cycle, index) => (
+                            <div
+                              key={cycle.id}
+                              className="p-4 bg-white/70 border border-gray-100 rounded-xl"
+                            >
+                              <div className="flex items-center justify-between mb-3">
+                                <span className="font-semibold text-gray-800 text-xs">
+                                  Cycle {cycle.cycleNumber ?? index + 1}
+                                </span>
+
+                                <span
+                                  className={`px-2 py-1 rounded-full text-[10px] font-semibold border ${getStatusClass(
+                                    cycle.status
+                                  )}`}
+                                >
+                                  {formatStatus(cycle.status)}
+                                </span>
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-3">
+                                <DetailItem
+                                  label="Start"
+                                  value={formatDate(cycle.startDate)}
+                                />
+
+                                <DetailItem
+                                  label="End"
+                                  value={formatDate(cycle.endDate)}
+                                />
+
+                                <DetailItem
+                                  label="Amount"
+                                  value={fmt(cycle.amount)}
+                                />
+
+                                <DetailItem
+                                  label="Payout"
+                                  value={fmt(cycle.payoutAmount)}
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <EmptyState text="No cycles available for this group." />
+                      )}
+                    </DetailSection>
+
+                    <DetailSection
+                      icon={<TbCurrencyNaira size={16} />}
+                      title={`Contributions (${
+                        selectedGroup.AjoContribution?.length || 0
+                      })`}
+                    >
+                      {selectedGroup.ajoContributions &&
+                      selectedGroup.ajoContributions.length > 0 ? (
+                        <div className="space-y-3">
+                          {selectedGroup.ajoContributions.map(
+                            (contribution) => (
+                              <div
+                                key={contribution.id}
+                                className="p-3 bg-white/70 border border-gray-100 rounded-xl"
+                              >
+                                <div className="flex justify-between gap-3">
+                                  <div>
+                                    <div className="font-semibold text-xs text-gray-800">
+                                      {contribution.memberName ||
+                                        "Member"}
+                                    </div>
+
+                                    <div className="text-[10px] text-gray-400 mt-0.5">
+                                      {contribution.cycleNumber
+                                        ? `Cycle ${contribution.cycleNumber}`
+                                        : "Contribution"}
+                                    </div>
+                                  </div>
+
+                                  <div className="text-right">
+                                    <div className="font-bold text-xs text-gray-900">
+                                      {fmt(contribution.amount)}
+                                    </div>
+
+                                    <div className="text-[10px] text-gray-400">
+                                      {formatStatus(
+                                        contribution.status
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {contribution.createdAt && (
+                                  <div className="flex items-center gap-1 text-[10px] text-gray-400 mt-2 pt-2 border-t border-gray-100">
+                                    <HiOutlineClock size={11} />
+
+                                    {formatDateTime(
+                                      contribution.createdAt
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          )}
+                        </div>
+                      ) : (
+                        <EmptyState text="No contributions recorded yet." />
+                      )}
+                    </DetailSection>
+
+                    <DetailSection
+                      icon={<HiOutlineCheckCircle size={16} />}
+                      title={`Payout Slots (${
+                        selectedGroup.AjoSlot?.length || 0
+                      })`}
+                    >
+                      {selectedGroup.AjoSlot &&
+                      selectedGroup.AjoSlot.length > 0 ? (
+                        <div className="space-y-3">
+                          {selectedGroup.AjoSlot.map(
+                            (slot) => (
+                              <div
+                                key={slot.id}
+                                className="flex items-center justify-between gap-3 p-3 bg-white/70 border border-gray-100 rounded-xl"
+                              >
+                                <div>
+                                  <div className="font-semibold text-xs text-gray-800">
+                                    {slot.memberName ||
+                                      "Member"}
+                                  </div>
+
+                                  <div className="text-[10px] text-gray-400 mt-0.5">
+                                    Slot {slot.slotNumber}
+                                  </div>
+                                </div>
+
+                                <div className="text-right">
+                                  <div className="font-bold text-xs text-gray-900">
+                                    {fmt(slot.amount)}
+                                  </div>
+
+                                  <div className="text-[10px] text-gray-400">
+                                    {formatStatus(slot.status)}
+                                  </div>
+                                </div>
+                              </div>
+                            )
+                          )}
+                        </div>
+                      ) : (
+                        <EmptyState text="No payout slots available yet." />
+                      )}
+                    </DetailSection>
+
+
+                    <DetailSection
+                      icon={<HiOutlineShieldCheck size={16} />}
+                      title="Group Configuration"
+                    >
+                      <div className="grid grid-cols-2 gap-4">
+                        <DetailItem
+                          label="Invite Code"
+                          value={
+                            selectedGroup.inviteCode ||
+                            "Not available"
+                          }
+                        />
+
+                        <DetailItem
+                          label="Privacy"
+                          value={
+                            selectedGroup.privacy
+                              ? formatStatus(selectedGroup.privacy)
+                              : "N/A"
+                          }
+                        />
+
+                        <DetailItem
+                          label="Created"
+                          value={formatDate(
+                            selectedGroup.createdAt
+                          )}
+                        />
+
+                        <DetailItem
+                          label="Last Updated"
+                          value={formatDate(
+                            selectedGroup.updatedAt
+                          )}
+                        />
                       </div>
-                    )}
-                  </div>
-                </div>
+                    </DetailSection>
+                  </>
+                ) : (
+                  <EmptyState text="No group details available." />
+                )}
               </div>
 
-              {/* =================================================
-                  DRAWER ACTIONS
-              ================================================== */}
 
               <div className="p-6 border-t border-gray-100/50 bg-white/30 backdrop-blur-md">
-                {isMutating ? (
-                  <div className="flex items-center justify-center py-2">
-                    <div className="w-5 h-5 rounded-full border-2 border-neutral-200 border-t-[#68123D] animate-spin mr-2" />
-
-                    <span className="text-xs text-gray-500 font-semibold">
-                      Updating Ajo group membership...
-                    </span>
-                  </div>
-                ) : confirmMode === "approve" ? (
-                  <div className="space-y-3.5 text-center">
-                    <p className="text-xs font-medium text-gray-500">
-                      Are you sure you want to{" "}
-                      <strong className="text-emerald-700 font-semibold">
-                        approve
-                      </strong>{" "}
-                      this member for the Ajo group? Their membership
-                      status will be set to{" "}
-                      <strong className="text-emerald-700 font-semibold">
-                        ACTIVE
-                      </strong>
-                      .
-                    </p>
-
-                    <div className="flex gap-3">
-                      <button
-                        onClick={() => setConfirmMode(null)}
-                        className="flex-1 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-700 py-3 rounded-2xl font-semibold text-sm transition-all cursor-pointer border-0 shadow-sm"
-                      >
-                        Cancel
-                      </button>
-
-                      <button
-                        onClick={() => handleDecision(true)}
-                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white py-3 rounded-2xl font-semibold text-sm transition-all cursor-pointer border-0 shadow-sm"
-                      >
-                        Confirm Approval
-                      </button>
-                    </div>
-                  </div>
-                ) : confirmMode === "reject" ? (
-                  <div className="space-y-3.5 text-center">
-                    <p className="text-xs font-medium text-gray-500">
-                      Are you sure you want to{" "}
-                      <strong className="text-rose-700 font-semibold">
-                        reject
-                      </strong>{" "}
-                      this member's request to join the Ajo group? This
-                      will permanently delete the membership request.
-                    </p>
-
-                    <div className="flex gap-3">
-                      <button
-                        onClick={() => setConfirmMode(null)}
-                        className="flex-1 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-700 py-3 rounded-2xl font-semibold text-sm transition-all cursor-pointer border-0 shadow-sm"
-                      >
-                        Cancel
-                      </button>
-
-                      <button
-                        onClick={() => handleDecision(false)}
-                        className="flex-1 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white py-3 rounded-2xl font-semibold text-sm transition-all cursor-pointer border-0 shadow-sm"
-                      >
-                        Confirm Rejection
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => setConfirmMode("approve")}
-                      className="flex-1 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white py-3 rounded-2xl font-semibold text-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer border-0 shadow-sm"
-                    >
-                      Approve Member
-                    </button>
-
-                    <button
-                      onClick={() => setConfirmMode("reject")}
-                      className="flex-1 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white py-3 rounded-2xl font-semibold text-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer border-0 shadow-sm"
-                    >
-                      Reject Member
-                    </button>
-                  </div>
-                )}
+                <button
+                  onClick={closeDetails}
+                  className="w-full bg-neutral-900 hover:bg-neutral-800 text-white py-3 rounded-2xl font-semibold text-sm transition-all cursor-pointer shadow-sm"
+                >
+                  Close Details
+                </button>
               </div>
             </div>
           </>
         )}
-
-        {/* =====================================================
-            BANK STATEMENT LIGHTBOX
-        ====================================================== */}
-
-        {isImgExpanded &&
-          sel &&
-          sel.bankStatementURL &&
-          !isPdf(sel.bankStatementURL) && (
-            <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[60] flex items-center justify-center p-4 animate-[fadeIn_0.15s_ease-out]">
-              <div
-                className="absolute inset-0 cursor-zoom-out"
-                onClick={() => setIsImgExpanded(false)}
-              />
-
-              <div className="relative max-w-4xl max-h-[85vh] overflow-hidden bg-white/10 backdrop-blur-md border border-white/15 rounded-3xl p-3 shadow-2xl flex flex-col items-center">
-                <button
-                  onClick={() => setIsImgExpanded(false)}
-                  className="absolute top-4 right-4 p-2 bg-black/60 hover:bg-black text-white rounded-full transition-all cursor-pointer z-10"
-                >
-                  <HiOutlineX size={20} />
-                </button>
-
-                <img
-                  src={sel.bankStatementURL}
-                  alt="Expanded Group Member Bank Statement"
-                  className="max-w-full max-h-[80vh] object-contain rounded-2xl"
-                />
-              </div>
-            </div>
-          )}
       </div>
     </PagePermissionGuard>
+  );
+}
+
+
+
+function DetailSection({
+  icon,
+  title,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="bg-white/50 border border-gray-100/60 rounded-2xl p-5 space-y-4 shadow-sm backdrop-blur-sm">
+      <div className="flex items-center gap-2 border-b border-gray-100/50 pb-2.5">
+        <div className="p-1.5 bg-[#68123D]/5 text-[#68123D] rounded-lg">
+          {icon}
+        </div>
+
+        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+          {title}
+        </h3>
+      </div>
+
+      {children}
+    </div>
+  );
+}
+
+function DetailItem({
+  label,
+  value,
+  highlight = false,
+}: {
+  label: string;
+  value: string;
+  highlight?: boolean;
+}) {
+  return (
+    <div>
+      <span className="text-gray-400 block font-medium mb-0.5 text-[11px]">
+        {label}
+      </span>
+
+      <span
+        className={`text-sm ${
+          highlight
+            ? "font-bold text-gray-950"
+            : "font-semibold text-gray-800"
+        } break-words`}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function EmptyState({ text }: { text: string }) {
+  return (
+    <div className="py-6 px-4 bg-gray-50/60 border border-gray-100 rounded-xl text-center">
+      <HiOutlineExclamationCircle
+        size={20}
+        className="mx-auto text-gray-300 mb-2"
+      />
+
+      <p className="text-xs text-gray-400">{text}</p>
+    </div>
   );
 }
