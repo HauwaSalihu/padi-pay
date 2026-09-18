@@ -18,12 +18,22 @@ export interface AjoGroup {
   adminId: string;
   createdAt: string;
   updatedAt: string;
+
   admin?: {
+    id?: string;
     first_name: string;
     last_name: string;
     email: string;
     phone: string;
-  };
+  } | null;
+
+  ajoMembers?: AjoMember[];
+
+  ajoCycles?: AjoCycle[];
+
+  ajoContributions?: AjoContribution[];
+
+  slots?: AjoSlot[];
 }
 
 export interface AjoMemberApplication {
@@ -203,16 +213,38 @@ export interface GetAjoGroupsResponse {
   meta: PaginationMeta;
 }
 
+export interface AjoUser {
+  id?: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+}
+
 export interface AjoMember {
   id: string;
-  userId: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone?: string;
-  status: string;
-  hands?: number;
-  contributionAmount: number;
+  ajoId?: string;
+  userId?: string;
+
+  user?: AjoUser | null;
+
+  contributionAmount?: number | string | null;
+  totalContributionPaid?: number | string | null;
+  totalRounds?: number | string | null;
+  totalRoundsPaid?: number | string | null;
+
+  hands?: number | null;
+  status?: string | null;
+
+  linkedAccountId?: string | null;
+  linkedAccountType?: string | null;
+  linkedAccount?: unknown;
+
+  businessName?: string | null;
+  cacNumber?: string | null;
+  bankStatementURL?: string | null;
+
+  createdAt?: string | null;
+  updatedAt?: string | null;
 }
 
 export interface AjoCycle {
