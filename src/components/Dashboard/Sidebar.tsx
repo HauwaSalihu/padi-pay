@@ -8,8 +8,11 @@ import {
   HiOutlineClipboardList,
   HiOutlineLogout,
   HiOutlineX,
+  HiOutlineCog,
+  HiOutlineCreditCard
 } from "react-icons/hi";
-import { useGetProfileQuery } from "@/services/padiApi/userApi";
+import { MdGroups2 } from "react-icons/md";
+import { useGetProfileQuery, useGetAdminStatusQuery } from "@/services/padiApi/userApi";
 import { useLogoutMutation } from "@/services/padiApi/authApi";
 
 interface SidebarProps {
@@ -20,6 +23,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { data } = useGetProfileQuery();
+  const { data: adminStatus } = useGetAdminStatusQuery();
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
 
   const user = data?.user;
@@ -49,13 +53,57 @@ export default function Sidebar({ onClose }: SidebarProps) {
       href: "/dashboard",
       label: "Dashboard",
       icon: HiOutlineHome,
+      pageKey: "dashboard",
     },
     {
       href: "/dashboard/ajo-applications",
       label: "Ajo Applications",
       icon: HiOutlineClipboardList,
+      pageKey: "ajo",
+    },
+    {
+      href: "/dashboard/ajo-groups",
+      label: "Ajo Groups",
+      icon: MdGroups2,
+      pageKey: "ajo-groups",
+    },
+    {
+      href: "/dashboard/transactions",
+      label: "Transactions",
+      icon: HiOutlineCreditCard,
+      pageKey: "transactions",
     },
   ];
+
+  const normalize = (v: unknown) =>
+    typeof v === 'string' ? v.trim().toLowerCase() : null;
+  const isSuperAdmin =
+    typeof adminStatus?.adminRole === 'string' &&
+    adminStatus.adminRole.toUpperCase().replace(/[^A-Z]/g, '') === 'SUPERADMIN';
+  const grantedKeys = new Set<string>();
+  const rawPerms =
+    (adminStatus as unknown as { permissions?: unknown; pageKeys?: unknown })
+      ?.permissions ??
+    (adminStatus as unknown as { pageKeys?: unknown })?.pageKeys;
+  const permList = Array.isArray(rawPerms) ? rawPerms : rawPerms ? [rawPerms] : [];
+  for (const p of permList) {
+    if (typeof p === 'string') {
+      const k = normalize(p);
+      if (k) grantedKeys.add(k);
+    } else if (p && typeof p === 'object') {
+      const rec = p as Record<string, unknown>;
+      const k = normalize(rec.pageKey) ?? normalize(rec.key) ?? normalize(rec.name);
+      if (k) grantedKeys.add(k);
+    }
+  }
+  // While permissions are still loading (non-super admin, no keys yet),
+  // show all links so valid admins never see an empty nav flash. The
+  // PagePermissionGuard on each page still enforces the real check.
+  const permsLoaded = isSuperAdmin || grantedKeys.size > 0;
+  const visibleNavItems = navItems.filter(
+    (item) => isSuperAdmin || !permsLoaded || grantedKeys.has(normalize(item.pageKey)!)
+  );
+  const canSeeSettings = isSuperAdmin || !permsLoaded || grantedKeys.has('settings');
 
   return (
     <div className="flex flex-col h-full bg-white">
@@ -79,10 +127,11 @@ export default function Sidebar({ onClose }: SidebarProps) {
 
       {/* Navigation Links */}
       <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
-        {navItems.map((item) => {
+        {visibleNavItems.map((item) => {
           const isActive =
             pathname === item.href ||
-            (item.href !== "/dashboard" && pathname.startsWith(item.href + "/"));
+            (item.href !== "/dashboard" &&
+              pathname.startsWith(item.href + "/"));
 
           return (
             <Link
@@ -105,8 +154,18 @@ export default function Sidebar({ onClose }: SidebarProps) {
         })}
       </nav>
 
-      {/* User profile & Logout */}
+      {/* User profile, Logout & Settings */}
       <div className="p-4 border-t border-[#E1E4EA] bg-gray-50/50 flex-shrink-0">
+        {canSeeSettings && (
+          <Link
+            href="/dashboard/settings"
+            onClick={onClose}
+            className="flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 text-[#68123D] hover:bg-gray-50 hover:text-[#181B25] mb-4"
+          >
+            <HiOutlineCog size={20} />
+            <span className="text-[#68123D]">Settings</span>
+          </Link>
+        )}
         <div className="flex items-center gap-3 mb-4 px-2">
           <div className="w-10 h-10 rounded-full bg-[#68123D]/10 text-[#68123D] flex items-center justify-center font-bold text-sm border border-[#68123D]/20 flex-shrink-0">
             {initials || "AD"}
