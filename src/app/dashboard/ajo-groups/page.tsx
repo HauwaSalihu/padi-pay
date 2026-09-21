@@ -316,7 +316,7 @@ export default function AjoGroupsPage() {
   ================================================================ */
 
   const memberContributions = selectedMember
-    ? contributions.filter((contribution) => {
+    ? contributions.filter((contribution: any) => {
         const contributionMemberId =
           contribution.memberId || contribution.userId;
 
