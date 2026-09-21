@@ -48,6 +48,8 @@ export interface UserDetails {
 export interface AdminStatusResponse {
   isAdmin: boolean;
   adminRole?: string;
+  permissions?: string[];
+  pageKeys?: string[];
 }
 
 export const userApi = baseApi.injectEndpoints({
