@@ -18,12 +18,22 @@ export interface AjoGroup {
   adminId: string;
   createdAt: string;
   updatedAt: string;
+
   admin?: {
+    id?: string;
     first_name: string;
     last_name: string;
     email: string;
     phone: string;
-  };
+  } | null;
+
+  ajoMembers?: AjoMember[];
+
+  ajoCycles?: AjoCycle[];
+
+  ajoContributions?: AjoContribution[];
+
+  slots?: AjoSlot[];
 }
 
 export interface AjoMemberApplication {
@@ -198,6 +208,83 @@ export interface GetLedgerEntriesResponse {
   meta: PaginationMeta;
 }
 
+export interface GetAjoGroupsResponse {
+  data: AjoGroup[];
+  meta: PaginationMeta;
+}
+
+export interface AjoUser {
+  id?: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+}
+
+export interface AjoMember {
+  id: string;
+  ajoId?: string;
+  userId?: string;
+
+  user?: AjoUser | null;
+
+  contributionAmount?: number | string | null;
+  totalContributionPaid?: number | string | null;
+  totalRounds?: number | string | null;
+  totalRoundsPaid?: number | string | null;
+
+  hands?: number | null;
+  status?: string | null;
+
+  linkedAccountId?: string | null;
+  linkedAccountType?: string | null;
+  linkedAccount?: unknown;
+
+  businessName?: string | null;
+  cacNumber?: string | null;
+  bankStatementURL?: string | null;
+
+  createdAt?: string | null;
+  updatedAt?: string | null;
+}
+
+export interface AjoCycle {
+  id: string;
+  cycleNumber: number;
+  status: string;
+  startDate?: string;
+  endDate?: string;
+  amount?: number;
+  payoutAmount?: number;
+}
+
+export interface AjoContribution {
+  id: string;
+  memberName?: string;
+  cycleNumber?: number;
+  amount: number;
+  status: string;
+  createdAt?: string;
+}
+
+export interface AjoSlot {
+  id: string;
+  slotNumber: number;
+  memberName?: string;
+  amount?: number;
+  status: string;
+}
+
+export interface AjoGroupDetails extends AjoGroup {
+  ajoMembers: AjoMember[];
+  ajoCycles: AjoCycle[];
+  ajoContributions: AjoContribution[];
+  slots: AjoSlot[];
+}
+
+export interface GetAjoGroupDetailsResponse {
+  data: AjoGroupDetails;
+}
+
 export const adminApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getAppStats: builder.query<AppStatsResponse, void>({
@@ -222,6 +309,20 @@ export const adminApi = baseApi.injectEndpoints({
         method: "GET",
       }),
       providesTags: ["LedgerSummary" as any],
+    }),
+    getAjoGroupDetails: builder.query<GetAjoGroupDetailsResponse, string>({
+      query: (id) => `/admin-dashboard/ajo-groups/${id}`,
+      providesTags: (_result, _error, id) => [{ type: "AjoGroups", id }],
+    }),
+    getAjoGroups: builder.query<
+      GetAjoGroupsResponse,
+      { page: number; limit: number }
+    >({
+      query: ({ page, limit }) => ({
+        url: `/admin-dashboard/ajo-groups?page=${page}&limit=${limit}`,
+        method: "GET",
+      }),
+      providesTags: ["AjoGroups"],
     }),
     getPendingAjoApplications: builder.query<
       PendingAjoApplicationsResponse,
@@ -276,7 +377,10 @@ export const adminApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["User"],
     }),
-    updateAdminPermissions: builder.mutation<any, UpdateAdminPermissionsRequest>({
+    updateAdminPermissions: builder.mutation<
+      any,
+      UpdateAdminPermissionsRequest
+    >({
       query: ({ adminId, role, selectedPages }) => ({
         url: `/admin-dashboard/admins/${adminId}/permissions`,
         method: "PATCH",
@@ -298,6 +402,8 @@ export const adminApi = baseApi.injectEndpoints({
 export const {
   useGetPendingAjoApplicationsQuery,
   useHandleAjoApplicationMutation,
+  useGetAjoGroupsQuery,
+  useGetAjoGroupDetailsQuery,
   useGetAppStatsQuery,
   useGetLedgerSummaryQuery,
   useGetLedgerEntriesQuery,
