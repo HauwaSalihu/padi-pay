@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { AntdRegistry } from '@ant-design/nextjs-registry';
+import { AntdRegistry } from "@ant-design/nextjs-registry";
 import localFont from "next/font/local";
 import ReduxProvider from "@/providers/ReduxProvider";
-
 
 const satoshi = localFont({
   src: [
@@ -27,7 +26,6 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
-
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
@@ -35,7 +33,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Padi Pay - Save Better, Together",
-  description: "Reinventing àjọ for the digital age. With Padi-Pay, enjoy trusted group savings, smart investments, crowdfunding, AI insights, and stress-free money transfers — all in one app.",
+  description:
+    "Reinventing àjọ for the digital age. With Padi-Pay, enjoy trusted group savings, smart investments, crowdfunding, AI insights, and stress-free money transfers — all in one app.",
 };
 
 export default function RootLayout({
@@ -45,21 +44,17 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <meta name="google-site-verification" content="pNM6Km2cMyTOkFx0BYzxok-yHASvNMOmL32KrmCJNjk" />
+      <meta
+        name="google-site-verification"
+        content="pNM6Km2cMyTOkFx0BYzxok-yHASvNMOmL32KrmCJNjk"
+      />
       <body
         className={`${satoshi.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-      
-   <AntdRegistry>
-     <ReduxProvider>
-       {children}
-     </ReduxProvider>
-   </AntdRegistry>
+        <AntdRegistry>
+          <ReduxProvider>{children}</ReduxProvider>
+        </AntdRegistry>
       </body>
     </html>
   );
 }
-
-
-
-
