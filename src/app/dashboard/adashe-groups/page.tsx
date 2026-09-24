@@ -61,9 +61,7 @@ export default function AdasheGroupsPage() {
   const [query, setQuery] = useState("");
 
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
-  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(
-    null,
-  );
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
 
   /* ================================================================
      GROUPS QUERY
@@ -137,7 +135,7 @@ export default function AdasheGroupsPage() {
       return "₦0";
     }
 
-    return `₦${amount.toLocaleString("en-NG", {
+    return `₦${(amount / 100).toLocaleString("en-NG", {
       minimumFractionDigits: 0,
       maximumFractionDigits: 2,
     })}`;
@@ -169,7 +167,7 @@ export default function AdasheGroupsPage() {
   };
 
   const getMemberName = (member?: AdasheMember | null) => {
-    if (!member) return "Unknown Member";
+    if (!member) return "Non Padipay Member";
 
     const firstName = member.user?.first_name?.trim() || "";
     const lastName = member.user?.last_name?.trim() || "";
@@ -180,7 +178,7 @@ export default function AdasheGroupsPage() {
       return fullName;
     }
 
-    return member.name?.trim() || "Unknown Member";
+    return member.name?.trim() || "Non Padipay Member";
   };
 
   const getMemberEmail = (member?: AdasheMember | null) => {
@@ -345,8 +343,7 @@ export default function AdasheGroupsPage() {
 
   const completedCycles = useMemo(() => {
     return cycles.filter(
-      (cycle) =>
-        cycle.status === "COMPLETE" || cycle.status === "COMPLETED",
+      (cycle) => cycle.status === "COMPLETE" || cycle.status === "COMPLETED",
     ).length;
   }, [cycles]);
 
@@ -370,6 +367,19 @@ export default function AdasheGroupsPage() {
   const memberContributions = selectedMember?.adasheContributions || [];
 
   const memberCycles = selectedMember?.adasheCycles || [];
+
+  const getMemberPayout = (member?: AdasheMember | null) => {
+    if (!member?.adasheCycles?.length) {
+      return 0;
+    }
+
+    return member.adasheCycles.reduce((total, cycle) => {
+      const amountContributed = Number(cycle.amountContributed || 0);
+      const contributionAmount = Number(cycle.contributionAmount || 0);
+
+      return total + Math.max(0, amountContributed - contributionAmount);
+    }, 0);
+  };
 
   /* ================================================================
      DRAWER ACTIONS
@@ -816,6 +826,10 @@ export default function AdasheGroupsPage() {
                                   </div>
                                 )}
 
+                                <span className="mt-1 block text-xs text-gray-400">
+                                  User ID: {selectedMember.userId || "N/A"}
+                                </span>
+
                                 <span
                                   className={`mt-2 inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold ${getMemberStatusClass(
                                     selectedMember.status,
@@ -853,8 +867,9 @@ export default function AdasheGroupsPage() {
                               />
 
                               <DetailItem
-                                label="User ID"
-                                value={selectedMember.userId || "N/A"}
+                                label="Payout"
+                                value={fmt(getMemberPayout(selectedMember))}
+                                highlight
                               />
 
                               <DetailItem
@@ -900,9 +915,7 @@ export default function AdasheGroupsPage() {
                                     fmt={fmt}
                                     formatDateTime={formatDateTime}
                                     formatStatus={formatStatus}
-                                    getStatusClass={
-                                      getContributionStatusClass
-                                    }
+                                    getStatusClass={getContributionStatusClass}
                                   />
                                 ))}
                               </div>
@@ -1100,7 +1113,7 @@ export default function AdasheGroupsPage() {
                                   <p className="text-sm font-semibold text-gray-800">
                                     {`${selectedGroup.admin.first_name || ""} ${
                                       selectedGroup.admin.last_name || ""
-                                    }`.trim() || "Unknown Admin"}
+                                    }`.trim() || "Padi Pay Admin"}
                                   </p>
 
                                   <p className="truncate text-xs text-gray-400">
@@ -1137,9 +1150,7 @@ export default function AdasheGroupsPage() {
                                 <button
                                   key={member.id}
                                   type="button"
-                                  onClick={() =>
-                                    openMemberDetails(member.id)
-                                  }
+                                  onClick={() => openMemberDetails(member.id)}
                                   className="group flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl border border-gray-100 bg-white/70 p-4 text-left transition-all hover:border-[#68123D]/20 hover:bg-white hover:shadow-sm"
                                 >
                                   <div className="flex min-w-0 items-center gap-3">
@@ -1247,9 +1258,7 @@ export default function AdasheGroupsPage() {
                                   fmt={fmt}
                                   formatDateTime={formatDateTime}
                                   formatStatus={formatStatus}
-                                  getStatusClass={
-                                    getContributionStatusClass
-                                  }
+                                  getStatusClass={getContributionStatusClass}
                                 />
                               ))}
                             </div>
@@ -1385,10 +1394,8 @@ function ContributionCard({
   const member = contribution.adasheMember;
 
   const memberName = member?.user
-    ? `${member.user.first_name || ""} ${
-        member.user.last_name || ""
-      }`.trim()
-    : member?.name || "Unknown Member";
+    ? `${member.user.first_name || ""} ${member.user.last_name || ""}`.trim()
+    : member?.name || "Non Padipay Member";
 
   return (
     <div className="rounded-xl border border-gray-100 bg-white/70 p-4">
@@ -1491,9 +1498,7 @@ function DetailItem({
 
       <span
         className={`break-words text-sm ${
-          highlight
-            ? "font-bold text-gray-950"
-            : "font-semibold text-gray-800"
+          highlight ? "font-bold text-gray-950" : "font-semibold text-gray-800"
         }`}
       >
         {value}
@@ -1570,9 +1575,7 @@ function Pagination({
 
         <button
           type="button"
-          onClick={() =>
-            setPage((p) => Math.min(meta.totalPages, p + 1))
-          }
+          onClick={() => setPage((p) => Math.min(meta.totalPages, p + 1))}
           disabled={page >= meta.totalPages || meta.totalPages === 0}
           className="cursor-pointer rounded-xl border border-gray-200/50 bg-white/50 p-2 text-gray-600 shadow-sm transition-all hover:bg-white disabled:cursor-not-allowed disabled:opacity-30"
         >
@@ -1618,9 +1621,7 @@ function ErrorState({
 
       <h3 className="mb-1 text-sm font-semibold text-red-900">{title}</h3>
 
-      <p className="mb-5 max-w-xs text-xs text-red-700/80">
-        {description}
-      </p>
+      <p className="mb-5 max-w-xs text-xs text-red-700/80">{description}</p>
 
       <button
         type="button"
