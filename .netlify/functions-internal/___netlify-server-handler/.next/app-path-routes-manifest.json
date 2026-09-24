@@ -2,6 +2,7 @@
   "/_global-error/page": "/_global-error",
   "/_not-found/page": "/_not-found",
   "/dashboard/ajo-applications/page": "/dashboard/ajo-applications",
+  "/dashboard/ajo-groups/page": "/dashboard/ajo-groups",
   "/dashboard/page": "/dashboard",
   "/dashboard/settings/adminSettings/page": "/dashboard/settings/adminSettings",
   "/dashboard/settings/page": "/dashboard/settings",

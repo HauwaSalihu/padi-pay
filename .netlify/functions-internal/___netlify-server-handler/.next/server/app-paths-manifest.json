@@ -2,6 +2,7 @@
   "/_global-error/page": "app/_global-error/page.js",
   "/_not-found/page": "app/_not-found/page.js",
   "/dashboard/ajo-applications/page": "app/dashboard/ajo-applications/page.js",
+  "/dashboard/ajo-groups/page": "app/dashboard/ajo-groups/page.js",
   "/dashboard/page": "app/dashboard/page.js",
   "/dashboard/settings/adminSettings/page": "app/dashboard/settings/adminSettings/page.js",
   "/dashboard/settings/page": "app/dashboard/settings/page.js",

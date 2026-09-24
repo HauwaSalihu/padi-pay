@@ -90,7 +90,7 @@
       "routeType": "page",
       "response": "complete",
       "compute": "static",
-      "htmlSize": 11486,
+      "htmlSize": 11779,
       "experimentalBypassFor": [
         {
           "type": "header",
@@ -118,7 +118,7 @@
       "routeType": "page",
       "response": "complete",
       "compute": "static",
-      "htmlSize": 12012,
+      "htmlSize": 12305,
       "experimentalBypassFor": [
         {
           "type": "header",
@@ -142,11 +142,39 @@
         "x-next-revalidate-tag-token"
       ]
     },
+    "/dashboard/ajo-groups": {
+      "routeType": "page",
+      "response": "complete",
+      "compute": "static",
+      "htmlSize": 12293,
+      "experimentalBypassFor": [
+        {
+          "type": "header",
+          "key": "next-action"
+        },
+        {
+          "type": "header",
+          "key": "content-type",
+          "value": "multipart/form-data;.*"
+        }
+      ],
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/dashboard/ajo-groups",
+      "dataRoute": "/dashboard/ajo-groups.rsc",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
     "/dashboard/settings": {
       "routeType": "page",
       "response": "complete",
       "compute": "static",
-      "htmlSize": 11996,
+      "htmlSize": 12289,
       "experimentalBypassFor": [
         {
           "type": "header",
@@ -174,7 +202,7 @@
       "routeType": "page",
       "response": "complete",
       "compute": "static",
-      "htmlSize": 12503,
+      "htmlSize": 12796,
       "experimentalBypassFor": [
         {
           "type": "header",
@@ -202,7 +230,7 @@
       "routeType": "page",
       "response": "complete",
       "compute": "static",
-      "htmlSize": 12004,
+      "htmlSize": 12297,
       "experimentalBypassFor": [
         {
           "type": "header",

@@ -211,7 +211,7 @@ Check https://docs.netlify.com/build/frameworks/framework-setup-guides/nextjs/ov
 
     const require = createRequire(import.meta.url);
     const middlewareEntrypoint = "${join(commonPrefix, entry)}"
-    const handlerMod = require("./" + middlewareEntrypoint);
+    const handlerMod = await require("./" + middlewareEntrypoint);
     const handler = handlerMod.default || handlerMod;
 
     export default handler

@@ -17,7 +17,7 @@ import {
 
 // src/build/content/static.ts
 import { existsSync } from "node:fs";
-import { cp, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, readdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
 var import_fast_glob = __toESM(require_out(), 1);
 import { encodeBlobKey } from "../../shared/blobkey.js";
@@ -82,6 +82,24 @@ var setHeadersConfig = async (ctx) => {
       "Cache-Control": "public, max-age=31536000, immutable"
     }
   });
+  const serviceWorkerDir = join(ctx.publishDir, "static", "service-worker");
+  let hasServiceWorker = existsSync(serviceWorkerDir);
+  if (hasServiceWorker) {
+    const serviceWorkerFiles = await readdir(serviceWorkerDir);
+    hasServiceWorker = serviceWorkerFiles.length !== 0;
+  }
+  if (hasServiceWorker) {
+    ctx.netlifyConfig.headers.push({
+      // tested when deployed, this ordering of Netlify headers works fine
+      // for same header names, the more specific "for" wins
+      // for different header names, the values get merged
+      for: `${basePath}/_next/static/service-worker/*`,
+      values: {
+        "Cache-Control": "public, max-age=0, must-revalidate",
+        "Service-Worker-Allowed": basePath || "/"
+      }
+    });
+  }
 };
 var copyStaticExport = async (ctx) => {
   await tracer.withActiveSpan("copyStaticExport", async () => {
