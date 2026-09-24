@@ -91,7 +91,6 @@ export interface AdminUser {
   email: string | null;
   phone: string;
   date_created: string;
-  /** Id of the Admin record, or null when the user is not an admin. */
   adminId: string | null;
   adminRole: AdminRole | null;
 }
@@ -117,20 +116,16 @@ export interface MakeUserAdminRequest {
 }
 
 export interface UpdateAdminPermissionsRequest {
-  /** Id of the Admin record to update (not the underlying user id). */
   adminId: string;
   role: AdminRole;
   selectedPages: string[];
 }
 
 export interface RemoveUserAsAdminRequest {
-  /** Id of the User whose Admin record should be removed. */
   userId: string;
-  /** Id of the Admin record to delete (not the underlying user id). */
   adminId: string;
 }
 
-/** A single row from the AdminPermission table. */
 export interface AdminPermissionRecord {
   id: string;
   adminId: string;
@@ -148,9 +143,7 @@ export interface AdminPermissionsData {
     last_name: string;
     email: string | null;
   };
-  /** Convenience flat list of granted page keys. */
   pageKeys: string[];
-  /** Full AdminPermission records. */
   permissions: AdminPermissionRecord[];
 }
 
@@ -285,6 +278,120 @@ export interface GetAjoGroupDetailsResponse {
   data: AjoGroupDetails;
 }
 
+export interface AdasheUser {
+  id: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+}
+
+export interface AdasheAdmin {
+  id: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+}
+
+export interface AdasheCycle {
+  id: string;
+  groupId: string;
+  adasheMemberId: string;
+
+  contributionAmount: number;
+  amountContributed: number;
+  cycleCount: number;
+
+  startDate: string;
+  endDate: string;
+
+  status: string;
+
+  createdAt: string;
+  updatedAt: string;
+
+  adasheMember?: AdasheMember;
+}
+
+export interface AdasheContribution {
+  id: string;
+
+  adasheId: string;
+  adasheMemberId: string;
+  adasheCycleId: string;
+
+  amount: number;
+  status: string;
+
+  paidAt?: string | null;
+
+  transactionId?: string | null;
+  reference?: string | null;
+
+  createdAt: string;
+  updatedAt: string;
+
+  adasheMember?: AdasheMember;
+  adasheCycle?: AdasheCycle;
+}
+
+export interface AdasheMember {
+  id: string;
+
+  groupId: string;
+  userId?: string | null;
+
+  name?: string | null;
+  phone?: string | null;
+
+  status: string;
+
+  user?: AdasheUser | null;
+
+  adasheCycles?: AdasheCycle[];
+  adasheContributions?: AdasheContribution[];
+}
+
+export interface AdasheGroup {
+  id: string;
+
+  name: string;
+  description?: string | null;
+
+  maxGroupSize?: number | null;
+
+  privacy: string;
+
+  minAmount?: number | null;
+
+  adminId: string;
+
+  admin?: AdasheAdmin;
+
+  members?: AdasheMember[];
+
+  adasheCycles?: AdasheCycle[];
+
+  adasheContributions?: AdasheContribution[];
+
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdasheGroupsResponse {
+  data: AdasheGroup[];
+
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface AdasheGroupDetailsResponse {
+  data: AdasheGroup;
+}
+
 export const adminApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getAppStats: builder.query<AppStatsResponse, void>({
@@ -396,6 +503,23 @@ export const adminApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["User"],
     }),
+    getAdasheGroups: builder.query<AdasheGroupsResponse, { page: number; limit: number }>({
+      query: ({ page, limit }) => ({
+        url: `/admin-dashboard/adashe-groups?page=${page}&limit=${limit}`,
+        method: "GET",
+      }),
+      providesTags: ["AdasheGroups"],
+    }),
+    getAdasheGroupDetails: builder.query<
+      AdasheGroupDetailsResponse,
+      { groupId: string }
+    >({
+      query: ({ groupId }) => ({
+        url: `/admin-dashboard/adashe-groups/${groupId}`,
+        method: "GET",
+      }),
+      providesTags: ["AdasheGroups"],
+    }), 
   }),
 });
 
@@ -413,4 +537,6 @@ export const {
   useMakeUserAdminMutation,
   useRemoveUserAsAdminMutation,
   useUpdateAdminPermissionsMutation,
+  useGetAdasheGroupsQuery,
+  useGetAdasheGroupDetailsQuery,
 } = adminApi;
