@@ -392,6 +392,106 @@ export interface AdasheGroupDetailsResponse {
   data: AdasheGroup;
 }
 
+export type FixedSavingsStatus = "ACTIVE" | "MATURED" | "BROKEN";
+
+export interface FixedSavingsUser {
+  id: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+}
+
+export interface FixedSavings {
+  id: string;
+  userId: string;
+
+  user: FixedSavingsUser;
+
+  name: string;
+
+  // Prisma BigInt should normally be serialized by the backend
+  // as a string in JSON.
+  principal: string | number;
+
+  duration: number;
+
+  startDate: string;
+  maturityDate: string;
+
+  status: FixedSavingsStatus;
+
+  liquidated: boolean;
+  liquidatedAt?: string | null;
+
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GetFixedSavingsResponse {
+  data: FixedSavings[];
+  meta: PaginationMeta;
+}
+
+export type TargetSavingsStatus =
+  | "ACTIVE"
+  | "COMPLETED"
+  | "CANCELLED"
+  | "PAUSED";
+
+export type TargetSavingsFrequency = "DAILY" | "WEEKLY" | "MONTHLY";
+
+export interface TargetSavingsUser {
+  id: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+}
+
+export interface TargetSavings {
+  id: string;
+  userId: string;
+
+  user: TargetSavingsUser;
+
+  name: string;
+
+  targetAmount: string | number;
+  balance: string | number;
+
+  currency: string;
+
+  targetDate?: string | null;
+
+  contributionAmount: string | number;
+
+  frequency: TargetSavingsFrequency;
+
+  nextRunAt: string;
+
+  lastRunAt?: string | null;
+  lastFailureAt?: string | null;
+
+  failureCount: number;
+
+  status: TargetSavingsStatus;
+
+  completedAt?: string | null;
+
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GetTargetSavingsResponse {
+  data: TargetSavings[];
+  meta: PaginationMeta;
+}
+
+export interface GetTargetSavingsDetailsResponse {
+  data: TargetSavings;
+}
+
 export const adminApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getAppStats: builder.query<AppStatsResponse, void>({
@@ -503,7 +603,10 @@ export const adminApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["User"],
     }),
-    getAdasheGroups: builder.query<AdasheGroupsResponse, { page: number; limit: number }>({
+    getAdasheGroups: builder.query<
+      AdasheGroupsResponse,
+      { page: number; limit: number }
+    >({
       query: ({ page, limit }) => ({
         url: `/admin-dashboard/adashe-groups?page=${page}&limit=${limit}`,
         method: "GET",
@@ -519,7 +622,52 @@ export const adminApi = baseApi.injectEndpoints({
         method: "GET",
       }),
       providesTags: ["AdasheGroups"],
-    }), 
+    }),
+
+    getFixedSavings: builder.query<
+      GetFixedSavingsResponse,
+      {
+        page: number;
+        limit: number;
+        status?: FixedSavingsStatus;
+      }
+    >({
+      query: ({ page, limit }) => ({
+        url: `/admin-dashboard/fixed-savings?page=${page}&limit=${limit}`,
+        method: "GET",
+      }),
+      providesTags: ["FixedSavings"],
+    }),
+
+    getTargetSavings: builder.query<
+      GetTargetSavingsResponse,
+      {
+        page: number;
+        limit: number;
+      }
+    >({
+      query: ({ page, limit }) => ({
+        url: `/admin-dashboard/target-savings?page=${page}&limit=${limit}`,
+        method: "GET",
+      }),
+      providesTags: ["TargetSavings"],
+    }),
+
+    getTargetSavingsDetails: builder.query<
+      GetTargetSavingsDetailsResponse,
+      string
+    >({
+      query: (id) => ({
+        url: `/admin-dashboard/target-savings/${id}`,
+        method: "GET",
+      }),
+      providesTags: (_result, _error, id) => [
+        {
+          type: "TargetSavings",
+          id,
+        },
+      ],
+    }),
   }),
 });
 
@@ -539,4 +687,7 @@ export const {
   useUpdateAdminPermissionsMutation,
   useGetAdasheGroupsQuery,
   useGetAdasheGroupDetailsQuery,
+  useGetFixedSavingsQuery,
+  useGetTargetSavingsQuery,
+  useGetTargetSavingsDetailsQuery,
 } = adminApi;
