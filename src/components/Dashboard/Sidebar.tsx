@@ -67,6 +67,12 @@ export default function Sidebar({ onClose }: SidebarProps) {
       icon: MdGroups2,
       pageKey: "ajo-groups",
     },
+      {
+      href: "/dashboard/adashe-groups",
+      label: "Adashe Groups",
+      icon: MdGroups2,
+      pageKey: "adashe-groups",
+    },
     {
       href: "/dashboard/transactions",
       label: "Transactions",
