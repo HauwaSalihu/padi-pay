@@ -13,6 +13,7 @@ import {
 } from "react-icons/hi";
 import { MdGroups2, MdSavings } from "react-icons/md";
 import { TbTargetArrow } from "react-icons/tb";
+import { GrMoney } from "react-icons/gr";
 
 import {
   useGetProfileQuery,
@@ -89,6 +90,13 @@ export default function Sidebar({ onClose }: SidebarProps) {
       label: "Target Savings",
       icon: TbTargetArrow,
       pageKey: "target-savings"
+    },
+    {
+      href: "/dashboard/spend-and-save",
+      label: "Spend And Save",
+      icon: GrMoney,
+      pageKey: "spend-and-save"
+
     },
     {
       href: "/dashboard/transactions",

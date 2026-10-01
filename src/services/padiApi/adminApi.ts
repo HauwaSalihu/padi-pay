@@ -492,6 +492,33 @@ export interface GetTargetSavingsDetailsResponse {
   data: TargetSavings;
 }
 
+export interface SpendAndSave {
+  id: string;
+  userId: string;
+  balance: string;
+  percentage: number;
+  isEnabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+  user: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone: string;
+  } | null;
+}
+
+export interface SpendAndSaveResponse {
+  data: SpendAndSave[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 export const adminApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getAppStats: builder.query<AppStatsResponse, void>({
@@ -668,6 +695,17 @@ export const adminApi = baseApi.injectEndpoints({
         },
       ],
     }),
+
+    getSpendAndSave: builder.query<
+      SpendAndSaveResponse,
+      {
+        page?: number;
+        limit?: number;
+      }
+    >({
+      query: ({ page = 1, limit = 10 }) =>
+        `/admin-dashboard/spend-and-save?page=${page}&limit=${limit}`,
+    }),
   }),
 });
 
@@ -690,4 +728,5 @@ export const {
   useGetFixedSavingsQuery,
   useGetTargetSavingsQuery,
   useGetTargetSavingsDetailsQuery,
+  useGetSpendAndSaveQuery
 } = adminApi;
