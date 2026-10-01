@@ -671,10 +671,13 @@ export const adminApi = baseApi.injectEndpoints({
       {
         page: number;
         limit: number;
+        status?: TargetSavingsStatus;
       }
     >({
-      query: ({ page, limit }) => ({
-        url: `/admin-dashboard/target-savings?page=${page}&limit=${limit}`,
+      query: ({ page, limit, status }) => ({
+        url: `/admin-dashboard/target-savings?page=${page}&limit=${limit}${
+          status ? `&status=${status}` : ""
+        }`,
         method: "GET",
       }),
       providesTags: ["TargetSavings"],
