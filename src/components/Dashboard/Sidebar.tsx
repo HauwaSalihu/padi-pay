@@ -62,6 +62,12 @@ export default function Sidebar({ onClose }: SidebarProps) {
       pageKey: "dashboard",
     },
     {
+      href: "/dashboard/transactions",
+      label: "Transactions",
+      icon: HiOutlineCreditCard,
+      pageKey: "transactions",
+    },
+    {
       href: "/dashboard/ajo-applications",
       label: "Ajo Applications",
       icon: HiOutlineClipboardList,
@@ -97,12 +103,6 @@ export default function Sidebar({ onClose }: SidebarProps) {
       icon: GrMoney,
       pageKey: "spend-and-save"
 
-    },
-    {
-      href: "/dashboard/transactions",
-      label: "Transactions",
-      icon: HiOutlineCreditCard,
-      pageKey: "transactions",
     },
   ];
 

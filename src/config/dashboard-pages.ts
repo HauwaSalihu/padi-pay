@@ -33,6 +33,33 @@ export const AVAILABLE_DASHBOARD_PAGES: DashboardPageConfig[] = [
     description: "",
   },
   {
+    pageKey: "ajo-groups",
+    label: "Ajo Groups",
+    description: ""
+  },
+  {
+    pageKey: "adashe-groups",
+    label: "Adashe Groups",
+    description: ""
+  },
+
+  {
+    pageKey: "fixed-savings",
+    label: "Fixed Savings",
+    description: ""
+  },
+
+  {
+    pageKey: "target-savings",
+    label: "Target Savings",
+    description: ""
+  },
+  {
+    pageKey: "spend-and-sabe",
+    label: "Spend and Save",
+    description: ""
+  },
+  {
     pageKey: "settings",
     label: "Settings",
     description: "",
