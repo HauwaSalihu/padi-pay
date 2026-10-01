@@ -9,10 +9,16 @@ import {
   HiOutlineLogout,
   HiOutlineX,
   HiOutlineCog,
-  HiOutlineCreditCard
+  HiOutlineCreditCard,
 } from "react-icons/hi";
-import { MdGroups2 } from "react-icons/md";
-import { useGetProfileQuery, useGetAdminStatusQuery } from "@/services/padiApi/userApi";
+import { MdGroups2, MdSavings } from "react-icons/md";
+import { TbTargetArrow } from "react-icons/tb";
+import { GrMoney } from "react-icons/gr";
+
+import {
+  useGetProfileQuery,
+  useGetAdminStatusQuery,
+} from "@/services/padiApi/userApi";
 import { useLogoutMutation } from "@/services/padiApi/authApi";
 
 interface SidebarProps {
@@ -67,11 +73,30 @@ export default function Sidebar({ onClose }: SidebarProps) {
       icon: MdGroups2,
       pageKey: "ajo-groups",
     },
-      {
+    {
       href: "/dashboard/adashe-groups",
       label: "Adashe Groups",
       icon: MdGroups2,
       pageKey: "adashe-groups",
+    },
+    {
+      href: "/dashboard/fixed-savings",
+      label: "Fixed Savings",
+      icon: MdSavings,
+      pageKey: "fixed-savings",
+    },
+    {
+      href: "/dashboard/target-savings",
+      label: "Target Savings",
+      icon: TbTargetArrow,
+      pageKey: "target-savings"
+    },
+    {
+      href: "/dashboard/spend-and-save",
+      label: "Spend And Save",
+      icon: GrMoney,
+      pageKey: "spend-and-save"
+
     },
     {
       href: "/dashboard/transactions",
@@ -82,23 +107,28 @@ export default function Sidebar({ onClose }: SidebarProps) {
   ];
 
   const normalize = (v: unknown) =>
-    typeof v === 'string' ? v.trim().toLowerCase() : null;
+    typeof v === "string" ? v.trim().toLowerCase() : null;
   const isSuperAdmin =
-    typeof adminStatus?.adminRole === 'string' &&
-    adminStatus.adminRole.toUpperCase().replace(/[^A-Z]/g, '') === 'SUPERADMIN';
+    typeof adminStatus?.adminRole === "string" &&
+    adminStatus.adminRole.toUpperCase().replace(/[^A-Z]/g, "") === "SUPERADMIN";
   const grantedKeys = new Set<string>();
   const rawPerms =
     (adminStatus as unknown as { permissions?: unknown; pageKeys?: unknown })
       ?.permissions ??
     (adminStatus as unknown as { pageKeys?: unknown })?.pageKeys;
-  const permList = Array.isArray(rawPerms) ? rawPerms : rawPerms ? [rawPerms] : [];
+  const permList = Array.isArray(rawPerms)
+    ? rawPerms
+    : rawPerms
+      ? [rawPerms]
+      : [];
   for (const p of permList) {
-    if (typeof p === 'string') {
+    if (typeof p === "string") {
       const k = normalize(p);
       if (k) grantedKeys.add(k);
-    } else if (p && typeof p === 'object') {
+    } else if (p && typeof p === "object") {
       const rec = p as Record<string, unknown>;
-      const k = normalize(rec.pageKey) ?? normalize(rec.key) ?? normalize(rec.name);
+      const k =
+        normalize(rec.pageKey) ?? normalize(rec.key) ?? normalize(rec.name);
       if (k) grantedKeys.add(k);
     }
   }
@@ -107,9 +137,11 @@ export default function Sidebar({ onClose }: SidebarProps) {
   // PagePermissionGuard on each page still enforces the real check.
   const permsLoaded = isSuperAdmin || grantedKeys.size > 0;
   const visibleNavItems = navItems.filter(
-    (item) => isSuperAdmin || !permsLoaded || grantedKeys.has(normalize(item.pageKey)!)
+    (item) =>
+      isSuperAdmin || !permsLoaded || grantedKeys.has(normalize(item.pageKey)!),
   );
-  const canSeeSettings = isSuperAdmin || !permsLoaded || grantedKeys.has('settings');
+  const canSeeSettings =
+    isSuperAdmin || !permsLoaded || grantedKeys.has("settings");
 
   return (
     <div className="flex flex-col h-full bg-white">
