@@ -29,13 +29,8 @@ export const AVAILABLE_DASHBOARD_PAGES: DashboardPageConfig[] = [
   },
   {
     pageKey: "ajo",
-    label: "Ajo Applications",
+    label: "Ajo",
     description: "",
-  },
-  {
-    pageKey: "ajo-groups",
-    label: "Ajo Groups",
-    description: ""
   },
   {
     pageKey: "adashe-groups",

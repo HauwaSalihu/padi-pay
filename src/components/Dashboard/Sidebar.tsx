@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   HiOutlineHome,
-  HiOutlineClipboardList,
   HiOutlineLogout,
   HiOutlineX,
   HiOutlineCog,
@@ -68,16 +67,10 @@ export default function Sidebar({ onClose }: SidebarProps) {
       pageKey: "transactions",
     },
     {
-      href: "/dashboard/ajo-applications",
-      label: "Ajo Applications",
-      icon: HiOutlineClipboardList,
-      pageKey: "ajo",
-    },
-    {
-      href: "/dashboard/ajo-groups",
-      label: "Ajo Groups",
+      href: "/dashboard/ajo",
+      label: "Ajo",
       icon: MdGroups2,
-      pageKey: "ajo-groups",
+      pageKey: "ajo",
     },
     {
       href: "/dashboard/adashe-groups",
