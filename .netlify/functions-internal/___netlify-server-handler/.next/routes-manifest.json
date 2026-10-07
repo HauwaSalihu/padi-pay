@@ -54,6 +54,18 @@
       "namedRegex": "^/dashboard(?:/)?$"
     },
     {
+      "page": "/dashboard/adashe-groups",
+      "regex": "^/dashboard/adashe\\-groups(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/adashe\\-groups(?:/)?$"
+    },
+    {
+      "page": "/dashboard/ajo",
+      "regex": "^/dashboard/ajo(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/ajo(?:/)?$"
+    },
+    {
       "page": "/dashboard/ajo-applications",
       "regex": "^/dashboard/ajo\\-applications(?:/)?$",
       "routeKeys": {},
@@ -66,6 +78,12 @@
       "namedRegex": "^/dashboard/ajo\\-groups(?:/)?$"
     },
     {
+      "page": "/dashboard/fixed-savings",
+      "regex": "^/dashboard/fixed\\-savings(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/fixed\\-savings(?:/)?$"
+    },
+    {
       "page": "/dashboard/settings",
       "regex": "^/dashboard/settings(?:/)?$",
       "routeKeys": {},
@@ -76,6 +94,18 @@
       "regex": "^/dashboard/settings/adminSettings(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/dashboard/settings/adminSettings(?:/)?$"
+    },
+    {
+      "page": "/dashboard/spend-and-save",
+      "regex": "^/dashboard/spend\\-and\\-save(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/spend\\-and\\-save(?:/)?$"
+    },
+    {
+      "page": "/dashboard/target-savings",
+      "regex": "^/dashboard/target\\-savings(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/target\\-savings(?:/)?$"
     },
     {
       "page": "/dashboard/transactions",

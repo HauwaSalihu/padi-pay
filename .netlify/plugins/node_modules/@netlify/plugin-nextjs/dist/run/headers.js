@@ -4,7 +4,7 @@
         return createRequire(import.meta.url);
       })();
     
-import "../esm-chunks/chunk-6BT4RYQJ.js";
+import "../esm-chunks/chunk-VJBIAOVP.js";
 
 // edge-runtime/lib/private-request-meta.ts
 var REQUEST_META_HEADER = "x-next-request-meta";

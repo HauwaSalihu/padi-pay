@@ -7,7 +7,7 @@
 import {
   __commonJS,
   __toESM
-} from "../../esm-chunks/chunk-6BT4RYQJ.js";
+} from "../../esm-chunks/chunk-VJBIAOVP.js";
 
 // node_modules/node-inspect-extracted/dist/inspect.js
 var require_inspect = __commonJS({

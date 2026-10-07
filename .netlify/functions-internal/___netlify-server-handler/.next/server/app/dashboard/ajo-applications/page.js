@@ -1,5 +1,6 @@
 var R=require("../../../chunks/ssr/[turbopack]_runtime.js")("server/app/dashboard/ajo-applications/page.js")
-R.c("server/chunks/ssr/[root-of-the-server]__0n5l43h._.js")
+R.c("server/chunks/ssr/[root-of-the-server]__0is4m0k._.js")
+R.c("server/chunks/ssr/node_modules_next_dist_0drixxt._.js")
 R.c("server/chunks/ssr/node_modules_next_dist_1n3w9lb._.js")
 R.c("server/chunks/ssr/[root-of-the-server]__0opbbjh._.js")
 R.c("server/chunks/ssr/[root-of-the-server]__0j26pto._.js")

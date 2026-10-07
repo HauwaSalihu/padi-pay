@@ -6,10 +6,10 @@
     
 import {
   require_semver
-} from "../esm-chunks/chunk-JNOKXHJS.js";
+} from "../esm-chunks/chunk-CY5V3UTG.js";
 import {
   __toESM
-} from "../esm-chunks/chunk-6BT4RYQJ.js";
+} from "../esm-chunks/chunk-VJBIAOVP.js";
 
 // src/build/plugin-context.ts
 var import_semver = __toESM(require_semver(), 1);

@@ -4,7 +4,7 @@
         return createRequire(import.meta.url);
       })();
     
-import "../esm-chunks/chunk-6BT4RYQJ.js";
+import "../esm-chunks/chunk-VJBIAOVP.js";
 
 // src/build/skew-protection.ts
 import { mkdir, writeFile } from "node:fs/promises";

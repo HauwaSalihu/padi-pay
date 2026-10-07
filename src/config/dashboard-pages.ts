@@ -33,7 +33,7 @@ export const AVAILABLE_DASHBOARD_PAGES: DashboardPageConfig[] = [
     description: "",
   },
   {
-    pageKey: "adashe-groups",
+    pageKey: "adashe",
     label: "Adashe Groups",
     description: ""
   },
@@ -50,7 +50,7 @@ export const AVAILABLE_DASHBOARD_PAGES: DashboardPageConfig[] = [
     description: ""
   },
   {
-    pageKey: "spend-and-sabe",
+    pageKey: "spend-and-save",
     label: "Spend and Save",
     description: ""
   },

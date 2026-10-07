@@ -4,7 +4,7 @@
         return createRequire(import.meta.url);
       })();
     
-import "../esm-chunks/chunk-6BT4RYQJ.js";
+import "../esm-chunks/chunk-VJBIAOVP.js";
 
 // src/build/cache.ts
 import { existsSync } from "node:fs";

@@ -25,7 +25,7 @@ __export(regional_blob_store_exports, {
 });
 module.exports = __toCommonJS(regional_blob_store_exports);
 
-// node_modules/@netlify/runtime-utils/dist/main.js
+// node_modules/@netlify/blobs/node_modules/@netlify/runtime-utils/dist/main.js
 var getString = (input) => typeof input === "string" ? input : JSON.stringify(input);
 var base64Decode = globalThis.Buffer ? (input) => Buffer.from(input, "base64").toString() : (input) => atob(input);
 var base64Encode = globalThis.Buffer ? (input) => Buffer.from(getString(input)).toString("base64") : (input) => btoa(getString(input));
@@ -60,7 +60,7 @@ function withActiveSpan(tracer, name, optionsOrFn, contextOrFn, fn) {
   return tracer.withActiveSpan(name, optionsOrFn, contextOrFn, func);
 }
 
-// node_modules/@netlify/blobs/dist/chunk-FWVYH726.js
+// node_modules/@netlify/blobs/dist/chunk-QDL6ESI2.js
 var getEnvironmentContext = () => {
   const context = globalThis.netlifyBlobsContext || getEnvironment().get("NETLIFY_BLOBS_CONTEXT");
   if (typeof context !== "string" || !context) {
@@ -125,22 +125,36 @@ var NF_REQUEST_ID = "x-nf-request-id";
 var DEPLOY_STORE_PREFIX = "deploy:";
 var SITE_STORE_PREFIX = "site:";
 var isDeniedWrite = (res, { method, storeName }) => (res.status === 401 || res.status === 403) && (method === "put" || method === "delete") && storeName !== void 0 && !storeName.startsWith(DEPLOY_STORE_PREFIX);
-var blobsErrorMessage = (res, context) => {
+var blobsErrorMessage = (res, context, responseBody) => {
   let details = res.headers.get(NF_ERROR) || `${res.status} status code`;
   if (res.headers.has(NF_REQUEST_ID)) {
     details += `, ID: ${res.headers.get(NF_REQUEST_ID)}`;
   }
   if (isDeniedWrite(res, context)) {
     const storeName = context.storeName?.startsWith(SITE_STORE_PREFIX) ? context.storeName.slice(SITE_STORE_PREFIX.length) : context.storeName;
-    return `Netlify Blobs could not write to store '${storeName}' (${details}). Builds and build plugins can only write to deploy-specific stores: use 'getDeployStore' instead of 'getStore', or pass a 'token' with write access to the store. If this code is not running in a build, check that the token and site ID are valid. See https://docs.netlify.com/build/data-and-storage/netlify-blobs/#deploy-specific-stores`;
+    const summary = `Netlify Blobs could not write to store '${storeName}' (${details}).`;
+    if (context.edgeAccess) {
+      return summary;
+    }
+    return `${summary} Builds and build plugins can only write to deploy-specific stores: use 'getDeployStore' instead of 'getStore', or pass a 'token' with write access to the store. If this code is not running in a build, check that the token and site ID are valid. See https://docs.netlify.com/build/data-and-storage/netlify-blobs/#deploy-specific-stores`;
   }
-  return `Netlify Blobs has generated an internal error (${details})`;
+  let message = `Netlify Blobs has generated an internal error (${details})`;
+  if (!res.headers.get(NF_ERROR) && responseBody) {
+    message += `: ${responseBody}`;
+  }
+  return message;
 };
 var BlobsInternalError = class extends Error {
-  constructor(res, context = {}) {
-    super(blobsErrorMessage(res, context));
+  constructor(res, context = {}, responseBody) {
+    super(blobsErrorMessage(res, context, responseBody));
     this.name = "BlobsInternalError";
+    this.status = res.status;
+    this.responseBody = responseBody;
   }
+};
+var createBlobsInternalError = async (res, context = {}) => {
+  const responseBody = await res.clone().text().catch(() => void 0);
+  return new BlobsInternalError(res, context, responseBody);
 };
 var collectIterator = async (iterator) => {
   const result = [];
@@ -184,13 +198,15 @@ var DEFAULT_RETRY_DELAY = getEnvironment().get("NODE_ENV") === "test" ? 1 : 5e3;
 var MIN_RETRY_DELAY = 1e3;
 var MAX_RETRY = 5;
 var RATE_LIMIT_HEADER = "X-RateLimit-Reset";
-var fetchAndRetry = async (fetch, url, options, attemptsLeft = MAX_RETRY) => {
+var fetchAndRetry = async (fetch, url, options, attemptsLeft = MAX_RETRY, getRetryUrl) => {
   try {
     const res = await fetch(url, options);
-    if (attemptsLeft > 0 && (res.status === 429 || res.status >= 500)) {
+    const isRetryable = res.status === 429 || res.status >= 500 || getRetryUrl !== void 0 && res.status === 403;
+    if (attemptsLeft > 0 && isRetryable) {
       const delay = getDelay(res.headers.get(RATE_LIMIT_HEADER));
       await sleep(delay);
-      return fetchAndRetry(fetch, url, options, attemptsLeft - 1);
+      const retryUrl = getRetryUrl ? await getRetryUrl() : url;
+      return fetchAndRetry(fetch, retryUrl, options, attemptsLeft - 1, getRetryUrl);
     }
     return res;
   } catch (error) {
@@ -199,7 +215,8 @@ var fetchAndRetry = async (fetch, url, options, attemptsLeft = MAX_RETRY) => {
     }
     const delay = getDelay();
     await sleep(delay);
-    return fetchAndRetry(fetch, url, options, attemptsLeft - 1);
+    const retryUrl = getRetryUrl ? await getRetryUrl() : url;
+    return fetchAndRetry(fetch, retryUrl, options, attemptsLeft - 1, getRetryUrl);
   }
 };
 var getDelay = (rateLimitReset) => {
@@ -213,6 +230,13 @@ var sleep = (ms) => new Promise((resolve) => {
 });
 var SIGNED_URL_ACCEPT_HEADER = "application/json;type=signed-url";
 var Client = class {
+  /**
+   * Whether requests reach Blobs through the edge rather than the API. Only
+   * runtime environments are given an edge URL.
+   */
+  get edgeAccess() {
+    return this.edgeURL !== void 0;
+  }
   constructor({ apiURL, consistency, edgeURL, fetch, region, siteID, token, uncachedEdgeURL }) {
     this.apiURL = apiURL;
     this.consistency = consistency ?? "eventual";
@@ -295,7 +319,7 @@ var Client = class {
       method
     });
     if (res.status !== 200) {
-      throw new BlobsInternalError(res, { method, storeName });
+      throw await createBlobsInternalError(res, { edgeAccess: this.edgeAccess, method, storeName });
     }
     const { url: signedURL } = await res.json();
     const userHeaders = encodedMetadata ? { [METADATA_HEADER_INTERNAL]: encodedMetadata } : void 0;
@@ -343,7 +367,15 @@ var Client = class {
     if (body instanceof ReadableStream) {
       options.duplex = "half";
     }
-    return fetchAndRetry(this.fetch, url, options);
+    const usesSignedUrl = !this.edgeURL && key !== void 0 && storeName !== void 0 && method !== "head" && method !== "delete";
+    let getRetryUrl;
+    if (usesSignedUrl) {
+      getRetryUrl = async () => {
+        const finalRequest = await this.getFinalRequest({ consistency, key, metadata, method, parameters, storeName });
+        return finalRequest.url;
+      };
+    }
+    return fetchAndRetry(this.fetch, url, options, void 0, getRetryUrl);
   }
 };
 var getClientOptions = (options, contextOverride) => {
@@ -395,7 +427,11 @@ var Store = class _Store {
   async delete(key) {
     const res = await this.client.makeRequest({ key, method: "delete", storeName: this.name });
     if (![200, 204, 404].includes(res.status)) {
-      throw new BlobsInternalError(res, { method: "delete", storeName: this.name });
+      throw new BlobsInternalError(res, {
+        edgeAccess: this.client.edgeAccess,
+        method: "delete",
+        storeName: this.name
+      });
     }
   }
   async deleteAll() {
@@ -404,7 +440,11 @@ var Store = class _Store {
     while (hasMore) {
       const res = await this.client.makeRequest({ method: "delete", storeName: this.name });
       if (res.status !== 200) {
-        throw new BlobsInternalError(res, { method: "delete", storeName: this.name });
+        throw new BlobsInternalError(res, {
+          edgeAccess: this.client.edgeAccess,
+          method: "delete",
+          storeName: this.name
+        });
       }
       const data = await res.json();
       if (typeof data.blobs_deleted !== "number") {
@@ -606,7 +646,11 @@ var Store = class _Store {
           modified: true
         };
       }
-      throw new BlobsInternalError(res, { method: "put", storeName: this.name });
+      throw await createBlobsInternalError(res, {
+        edgeAccess: this.client.edgeAccess,
+        method: "put",
+        storeName: this.name
+      });
     });
   }
   async setJSON(key, data, options = {}) {
@@ -647,7 +691,11 @@ var Store = class _Store {
           modified: true
         };
       }
-      throw new BlobsInternalError(res, { method: "put", storeName: this.name });
+      throw new BlobsInternalError(res, {
+        edgeAccess: this.client.edgeAccess,
+        method: "put",
+        storeName: this.name
+      });
     });
   }
   static formatListResultBlob(result) {
@@ -781,6 +829,20 @@ var Store = class _Store {
     };
   }
 };
+var getDeployStoreRegion = (clientOptions, context) => {
+  if (clientOptions.region) {
+    return clientOptions.region;
+  }
+  if (clientOptions.edgeURL || clientOptions.uncachedEdgeURL) {
+    if (!context.primaryRegion) {
+      throw new Error(
+        "When accessing a deploy store, the Netlify Blobs client needs to be configured with a region, and one was not found in the environment. To manually set the region, set the `region` property in the store options. If you are using the Netlify CLI, you may have an outdated version; run `npm install -g netlify-cli@latest` to update and try again."
+      );
+    }
+    return context.primaryRegion;
+  }
+  return REGION_AUTO;
+};
 var getDeployStore = (input = {}, options) => {
   const context = getEnvironmentContext();
   const mergedOptions = typeof input === "string" ? { ...options, name: input } : input;
@@ -789,18 +851,7 @@ var getDeployStore = (input = {}, options) => {
     throw new MissingBlobsEnvironmentError(["deployID"]);
   }
   const clientOptions = getClientOptions(mergedOptions, context);
-  if (!clientOptions.region) {
-    if (clientOptions.edgeURL || clientOptions.uncachedEdgeURL) {
-      if (!context.primaryRegion) {
-        throw new Error(
-          "When accessing a deploy store, the Netlify Blobs client needs to be configured with a region, and one was not found in the environment. To manually set the region, set the `region` property in the `getDeployStore` options. If you are using the Netlify CLI, you may have an outdated version; run `npm install -g netlify-cli@latest` to update and try again."
-        );
-      }
-      clientOptions.region = context.primaryRegion;
-    } else {
-      clientOptions.region = REGION_AUTO;
-    }
-  }
+  clientOptions.region = getDeployStoreRegion(clientOptions, context);
   const client = new Client(clientOptions);
   return new Store({ client, deployID, name: mergedOptions.name });
 };

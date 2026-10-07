@@ -6,6 +6,12 @@
       "static/media/caa3a2e1cccd8315-s.p.0wgildi0cnwt9.woff2",
       "static/media/797e433ab948586e-s.p.0r6juujl39pe6.woff2"
     ],
+    "[project]/src/app/dashboard/adashe-groups/page": [
+      "static/media/Satoshi_Regular-s.p.0dvfn5g0xv8bu.woff2",
+      "static/media/Satoshi_Bold-s.p.2_-zzs2una4mm.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.0wgildi0cnwt9.woff2",
+      "static/media/797e433ab948586e-s.p.0r6juujl39pe6.woff2"
+    ],
     "[project]/src/app/dashboard/ajo-applications/page": [
       "static/media/Satoshi_Regular-s.p.0dvfn5g0xv8bu.woff2",
       "static/media/Satoshi_Bold-s.p.2_-zzs2una4mm.woff2",
@@ -13,6 +19,18 @@
       "static/media/797e433ab948586e-s.p.0r6juujl39pe6.woff2"
     ],
     "[project]/src/app/dashboard/ajo-groups/page": [
+      "static/media/Satoshi_Regular-s.p.0dvfn5g0xv8bu.woff2",
+      "static/media/Satoshi_Bold-s.p.2_-zzs2una4mm.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.0wgildi0cnwt9.woff2",
+      "static/media/797e433ab948586e-s.p.0r6juujl39pe6.woff2"
+    ],
+    "[project]/src/app/dashboard/ajo/page": [
+      "static/media/Satoshi_Regular-s.p.0dvfn5g0xv8bu.woff2",
+      "static/media/Satoshi_Bold-s.p.2_-zzs2una4mm.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.0wgildi0cnwt9.woff2",
+      "static/media/797e433ab948586e-s.p.0r6juujl39pe6.woff2"
+    ],
+    "[project]/src/app/dashboard/fixed-savings/page": [
       "static/media/Satoshi_Regular-s.p.0dvfn5g0xv8bu.woff2",
       "static/media/Satoshi_Bold-s.p.2_-zzs2una4mm.woff2",
       "static/media/caa3a2e1cccd8315-s.p.0wgildi0cnwt9.woff2",
@@ -31,6 +49,18 @@
       "static/media/797e433ab948586e-s.p.0r6juujl39pe6.woff2"
     ],
     "[project]/src/app/dashboard/settings/page": [
+      "static/media/Satoshi_Regular-s.p.0dvfn5g0xv8bu.woff2",
+      "static/media/Satoshi_Bold-s.p.2_-zzs2una4mm.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.0wgildi0cnwt9.woff2",
+      "static/media/797e433ab948586e-s.p.0r6juujl39pe6.woff2"
+    ],
+    "[project]/src/app/dashboard/spend-and-save/page": [
+      "static/media/Satoshi_Regular-s.p.0dvfn5g0xv8bu.woff2",
+      "static/media/Satoshi_Bold-s.p.2_-zzs2una4mm.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.0wgildi0cnwt9.woff2",
+      "static/media/797e433ab948586e-s.p.0r6juujl39pe6.woff2"
+    ],
+    "[project]/src/app/dashboard/target-savings/page": [
       "static/media/Satoshi_Regular-s.p.0dvfn5g0xv8bu.woff2",
       "static/media/Satoshi_Bold-s.p.2_-zzs2una4mm.woff2",
       "static/media/caa3a2e1cccd8315-s.p.0wgildi0cnwt9.woff2",

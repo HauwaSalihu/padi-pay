@@ -39,11 +39,16 @@ var import_node_path = require("node:path");
 var import_posix = require("node:path/posix");
 var import_constants = require("next/dist/lib/constants.js");
 var import_cache_types = require("../../shared/cache-types.cjs");
+var import_route_cache_key = require("../../shared/route-cache-key.cjs");
 var import_storage = require("../storage/storage.cjs");
 var import_request_context = require("./request-context.cjs");
 var import_tags_handler = require("./tags-handler.cjs");
 var import_tracer = require("./tracer.cjs");
 var memoizedPrerenderManifest;
+var getPagesRouterImplicitTag = (key) => {
+  const pathname = (0, import_route_cache_key.routeCacheKeyToPathname)(key);
+  return `_N_T_${pathname === "/index" ? "/" : encodeURI(pathname)}`;
+};
 var NetlifyCacheHandler = class {
   options;
   revalidatedTags;
@@ -108,7 +113,7 @@ var NetlifyCacheHandler = class {
       return;
     }
     if (!cacheValue) {
-      const cacheTags = [`_N_T_${key === "/index" ? "/" : encodeURI(key)}`];
+      const cacheTags = [getPagesRouterImplicitTag(key)];
       requestContext.responseCacheTags = cacheTags;
       return;
     }
@@ -117,7 +122,7 @@ var NetlifyCacheHandler = class {
         const cacheTags = cacheValue.headers[import_constants.NEXT_CACHE_TAGS_HEADER].split(/,|%2c/gi).map(encodeURI);
         requestContext.responseCacheTags = cacheTags;
       } else if ((cacheValue.kind === "PAGE" || cacheValue.kind === "PAGES") && typeof cacheValue.pageData === "object" || cacheValue.kind === "REDIRECT" && typeof cacheValue.props === "object") {
-        const cacheTags = [`_N_T_${key === "/index" ? "/" : encodeURI(key)}`];
+        const cacheTags = [getPagesRouterImplicitTag(key)];
         requestContext.responseCacheTags = cacheTags;
       }
     }
@@ -185,6 +190,10 @@ var NetlifyCacheHandler = class {
       const [key, context = {}] = args;
       (0, import_request_context.getLogger)().debug(`[NetlifyCacheHandler.get]: ${key}`);
       span?.setAttributes({ key });
+      const { kind, kindHint } = context;
+      if (kind !== "PAGES" && kindHint !== "pages") {
+        (0, import_tags_handler.prefetchTagRevalidationMarker)();
+      }
       const blob = await this.cacheStore.get(key, "blobStore.get");
       if (!blob) {
         span?.addEvent("Cache miss", { key });
@@ -355,7 +364,7 @@ var NetlifyCacheHandler = class {
       if (!data && !isDataReq || data?.kind === "PAGE" || data?.kind === "PAGES" || data?.kind === "REDIRECT") {
         const requestContext = (0, import_request_context.getRequestContext)();
         if (requestContext?.didPagesRouterOnDemandRevalidate) {
-          const tag = `_N_T_${key === "/index" ? "/" : encodeURI(key)}`;
+          const tag = getPagesRouterImplicitTag(key);
           requestContext?.trackBackgroundWork((0, import_tags_handler.purgeEdgeCache)(tag));
         }
       }

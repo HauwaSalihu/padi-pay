@@ -6,7 +6,7 @@
     
 import {
   __require
-} from "../esm-chunks/chunk-6BT4RYQJ.js";
+} from "../esm-chunks/chunk-VJBIAOVP.js";
 
 // src/build/advanced-api-routes.ts
 import { existsSync } from "node:fs";
