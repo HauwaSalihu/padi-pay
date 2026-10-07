@@ -46,18 +46,34 @@ export default function SpendAndSavePage() {
   /* HELPERS */
   /* ========================================================= */
 
-  const fmtMoney = (value?: string | number | bigint | null) => {
+  const fmtMoney = (
+    value?: string | number | bigint | null,
+    currency = "NGN",
+  ) => {
     if (value === undefined || value === null) {
-      return "₦0";
+      return currency === "NGN" ? "₦0.00" : `${currency} 0.00`;
     }
 
     const amount = Number(value);
 
     if (Number.isNaN(amount)) {
-      return "₦0";
+      return currency === "NGN" ? "₦0.00" : `${currency} 0.00`;
     }
 
-    return `₦${amount.toLocaleString("en-NG")}`;
+    // Convert kobo to naira and round to the nearest kobo
+    const nairaAmount = Math.round(amount) / 100;
+
+    if (currency === "NGN") {
+      return `₦${nairaAmount.toLocaleString("en-NG", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`;
+    }
+
+    return `${currency} ${nairaAmount.toLocaleString("en-NG", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
   };
 
   const formatDate = (value?: string | null) => {
@@ -258,9 +274,7 @@ export default function SpendAndSavePage() {
             <div className="rounded-2xl border border-white/70 bg-white/50 p-5 shadow-sm backdrop-blur-lg">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-xs font-medium text-gray-400">
-                    Enabled
-                  </p>
+                  <p className="text-xs font-medium text-gray-400">Enabled</p>
 
                   <p className="mt-2 text-2xl font-bold text-emerald-600">
                     {enabledCount}
@@ -277,9 +291,7 @@ export default function SpendAndSavePage() {
             <div className="rounded-2xl border border-white/70 bg-white/50 p-5 shadow-sm backdrop-blur-lg">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-xs font-medium text-gray-400">
-                    Disabled
-                  </p>
+                  <p className="text-xs font-medium text-gray-400">Disabled</p>
 
                   <p className="mt-2 text-2xl font-bold text-gray-600">
                     {disabledCount}
@@ -338,9 +350,7 @@ export default function SpendAndSavePage() {
 
           <div className="flex w-full items-center justify-end gap-3 lg:w-auto">
             <div className="ml-auto flex items-center gap-2">
-              <span className="text-xs font-medium text-gray-400">
-                Show
-              </span>
+              <span className="text-xs font-medium text-gray-400">Show</span>
 
               <select
                 value={limit}
@@ -384,8 +394,8 @@ export default function SpendAndSavePage() {
             </h3>
 
             <p className="mb-5 max-w-xs text-xs text-red-700/80">
-              There was an issue fetching the Spend & Save records. Please
-              try again.
+              There was an issue fetching the Spend & Save records. Please try
+              again.
             </p>
 
             <button
@@ -425,19 +435,13 @@ export default function SpendAndSavePage() {
 
                       <th className="px-6 py-4 font-medium">User</th>
 
-                      <th className="px-6 py-4 font-medium">
-                        Saved Balance
-                      </th>
+                      <th className="px-6 py-4 font-medium">Saved Balance</th>
 
-                      <th className="px-6 py-4 font-medium">
-                        Percentage
-                      </th>
+                      <th className="px-6 py-4 font-medium">Percentage</th>
 
                       <th className="px-6 py-4 font-medium">Status</th>
 
-                      <th className="px-6 py-4 font-medium">
-                        Created
-                      </th>
+                      <th className="px-6 py-4 font-medium">Created</th>
 
                       <th className="px-6 py-4 text-right font-medium">
                         Actions
@@ -524,9 +528,7 @@ export default function SpendAndSavePage() {
                           {/* ACTION */}
                           <td className="px-6 py-4 text-right">
                             <button
-                              onClick={() =>
-                                setSelectedSpendAndSave(record)
-                              }
+                              onClick={() => setSelectedSpendAndSave(record)}
                               className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border-0 bg-neutral-900 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:bg-neutral-800 active:bg-neutral-950"
                             >
                               View
@@ -546,8 +548,8 @@ export default function SpendAndSavePage() {
               {/* PAGINATION */}
               <div className="flex items-center justify-between border-t border-gray-100/50 bg-white/20 px-6 py-4 text-xs font-medium text-gray-500">
                 <span>
-                  Page {meta.page} of {meta.totalPages || 1} (
-                  {meta.total} total)
+                  Page {meta.page} of {meta.totalPages || 1} ({meta.total}{" "}
+                  total)
                 </span>
 
                 <div className="flex gap-2">
@@ -561,9 +563,7 @@ export default function SpendAndSavePage() {
 
                   <button
                     onClick={() =>
-                      setPage((p) =>
-                        Math.min(meta.totalPages || 1, p + 1),
-                      )
+                      setPage((p) => Math.min(meta.totalPages || 1, p + 1))
                     }
                     disabled={page >= (meta.totalPages || 1)}
                     className="cursor-pointer rounded-xl border border-gray-200/50 bg-white/50 p-2 text-gray-600 shadow-sm transition-all hover:border-gray-300 hover:bg-white active:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-30"
@@ -685,10 +685,7 @@ export default function SpendAndSavePage() {
                       className="inline-flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border-0 bg-neutral-900 px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-neutral-800 active:bg-neutral-950"
                     >
                       View Details
-                      <HiOutlineExternalLink
-                        size={13}
-                        className="opacity-80"
-                      />
+                      <HiOutlineExternalLink size={13} className="opacity-80" />
                     </button>
                   </div>
                 );
@@ -711,9 +708,7 @@ export default function SpendAndSavePage() {
 
                   <button
                     onClick={() =>
-                      setPage((p) =>
-                        Math.min(meta.totalPages || 1, p + 1),
-                      )
+                      setPage((p) => Math.min(meta.totalPages || 1, p + 1))
                     }
                     disabled={page >= (meta.totalPages || 1)}
                     className="cursor-pointer rounded-xl border border-gray-200/50 bg-white p-2.5 text-gray-600 shadow-sm transition-all hover:bg-gray-50 active:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-30"
