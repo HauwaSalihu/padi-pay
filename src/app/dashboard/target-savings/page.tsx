@@ -28,12 +28,13 @@ export default function TargetSavingsPage() {
   const [limit, setLimit] = useState(10);
   const [query, setQuery] = useState("");
 
-  const [statusFilter, setStatusFilter] = useState<
-    "ALL" | TargetSavingsStatus
-  >("ALL");
+  const [statusFilter, setStatusFilter] = useState<"ALL" | TargetSavingsStatus>(
+    "ALL",
+  );
 
-  const [selectedSavings, setSelectedSavings] =
-    useState<TargetSavings | null>(null);
+  const [selectedSavings, setSelectedSavings] = useState<TargetSavings | null>(
+    null,
+  );
 
   const { data, isLoading, isError, refetch } = useGetTargetSavingsQuery({
     page,
@@ -59,20 +60,29 @@ export default function TargetSavingsPage() {
     currency = "NGN",
   ) => {
     if (value === undefined || value === null) {
-      return currency === "NGN" ? "₦0" : `${currency} 0`;
+      return currency === "NGN" ? "₦0.00" : `${currency} 0.00`;
     }
 
     const amount = Number(value);
 
     if (Number.isNaN(amount)) {
-      return currency === "NGN" ? "₦0" : `${currency} 0`;
+      return currency === "NGN" ? "₦0.00" : `${currency} 0.00`;
     }
+
+    // Convert kobo to naira and round to the nearest kobo
+    const nairaAmount = Math.round(amount) / 100;
 
     if (currency === "NGN") {
-      return `₦${amount.toLocaleString("en-NG")}`;
+      return `₦${nairaAmount.toLocaleString("en-NG", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`;
     }
 
-    return `${currency} ${amount.toLocaleString("en-NG")}`;
+    return `${currency} ${nairaAmount.toLocaleString("en-NG", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
   };
 
   const formatDate = (value?: string | null) => {
@@ -113,10 +123,7 @@ export default function TargetSavingsPage() {
     });
   };
 
-  const getInitials = (
-    first?: string | null,
-    last?: string | null,
-  ) => {
+  const getInitials = (first?: string | null, last?: string | null) => {
     const f = first?.charAt(0) || "";
     const l = last?.charAt(0) || "";
 
@@ -137,52 +144,42 @@ export default function TargetSavingsPage() {
     switch (status) {
       case "ACTIVE":
         return {
-          wrapper:
-            "bg-emerald-50 text-emerald-700 border-emerald-100",
+          wrapper: "bg-emerald-50 text-emerald-700 border-emerald-100",
           dot: "bg-emerald-500",
         };
 
       case "COMPLETED":
         return {
-          wrapper:
-            "bg-blue-50 text-blue-700 border-blue-100",
+          wrapper: "bg-blue-50 text-blue-700 border-blue-100",
           dot: "bg-blue-500",
         };
 
       case "CANCELLED":
         return {
-          wrapper:
-            "bg-rose-50 text-rose-700 border-rose-100",
+          wrapper: "bg-rose-50 text-rose-700 border-rose-100",
           dot: "bg-rose-500",
         };
 
       case "PAUSED":
         return {
-          wrapper:
-            "bg-amber-50 text-amber-700 border-amber-100",
+          wrapper: "bg-amber-50 text-amber-700 border-amber-100",
           dot: "bg-amber-500",
         };
 
       default:
         return {
-          wrapper:
-            "bg-gray-50 text-gray-600 border-gray-100",
+          wrapper: "bg-gray-50 text-gray-600 border-gray-100",
           dot: "bg-gray-400",
         };
     }
   };
 
-  const formatFrequency = (
-    frequency?: TargetSavings["frequency"],
-  ) => {
+  const formatFrequency = (frequency?: TargetSavings["frequency"]) => {
     if (!frequency) {
       return "N/A";
     }
 
-    return (
-      frequency.charAt(0) +
-      frequency.slice(1).toLowerCase()
-    );
+    return frequency.charAt(0) + frequency.slice(1).toLowerCase();
   };
 
   const calculateProgress = (
@@ -200,10 +197,7 @@ export default function TargetSavingsPage() {
       return 0;
     }
 
-    return Math.min(
-      100,
-      Math.max(0, (balanceNumber / targetNumber) * 100),
-    );
+    return Math.min(100, Math.max(0, (balanceNumber / targetNumber) * 100));
   };
 
   const calculateRemainingAmount = (
@@ -220,9 +214,7 @@ export default function TargetSavingsPage() {
     return Math.max(0, targetNumber - balanceNumber);
   };
 
-  const calculateDaysRemaining = (
-    targetDate?: string | null,
-  ) => {
+  const calculateDaysRemaining = (targetDate?: string | null) => {
     if (!targetDate) {
       return null;
     }
@@ -236,9 +228,7 @@ export default function TargetSavingsPage() {
 
     const difference = target - now;
 
-    return Math.ceil(
-      difference / (1000 * 60 * 60 * 24),
-    );
+    return Math.ceil(difference / (1000 * 60 * 60 * 24));
   };
 
   const getTargetDateLabel = (
@@ -271,9 +261,7 @@ export default function TargetSavingsPage() {
       return "Target date reached";
     }
 
-    return `${days} ${
-      days === 1 ? "day" : "days"
-    } remaining`;
+    return `${days} ${days === 1 ? "day" : "days"} remaining`;
   };
 
   /* ============================================================= */
@@ -292,12 +280,8 @@ export default function TargetSavingsPage() {
 
       return (
         fullName.includes(search) ||
-        saving.user?.email
-          ?.toLowerCase()
-          .includes(search) ||
-        saving.user?.phone
-          ?.toLowerCase()
-          .includes(search) ||
+        saving.user?.email?.toLowerCase().includes(search) ||
+        saving.user?.phone?.toLowerCase().includes(search) ||
         saving.name.toLowerCase().includes(search) ||
         saving.id.toLowerCase().includes(search) ||
         saving.status.toLowerCase().includes(search) ||
@@ -327,23 +311,18 @@ export default function TargetSavingsPage() {
   ).length;
 
   const totalTargetAmount = savings.reduce(
-    (total, saving) =>
-      total + Number(saving.targetAmount || 0),
+    (total, saving) => total + Number(saving.targetAmount || 0),
     0,
   );
 
   const totalBalance = savings.reduce(
-    (total, saving) =>
-      total + Number(saving.balance || 0),
+    (total, saving) => total + Number(saving.balance || 0),
     0,
   );
 
   const overallProgress =
     totalTargetAmount > 0
-      ? Math.min(
-          100,
-          (totalBalance / totalTargetAmount) * 100,
-        )
+      ? Math.min(100, (totalBalance / totalTargetAmount) * 100)
       : 0;
 
   /* ============================================================= */
@@ -354,9 +333,7 @@ export default function TargetSavingsPage() {
     setSelectedSavings(null);
   };
 
-  const handleStatusChange = (
-    value: "ALL" | TargetSavingsStatus,
-  ) => {
+  const handleStatusChange = (value: "ALL" | TargetSavingsStatus) => {
     setStatusFilter(value);
     setPage(1);
   };
@@ -400,9 +377,8 @@ export default function TargetSavingsPage() {
             </h1>
 
             <p className="max-w-xl text-sm text-[#525866]/80">
-              View and manage users&apos; target savings plans,
-              balances, contribution schedules, target dates, and
-              savings progress.
+              View and manage users&apos; target savings plans, balances,
+              contribution schedules, target dates, and savings progress.
             </p>
           </div>
 
@@ -445,9 +421,7 @@ export default function TargetSavingsPage() {
             <div className="rounded-2xl border border-white/70 bg-white/50 p-5 shadow-sm backdrop-blur-lg">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-xs font-medium text-gray-400">
-                    Active
-                  </p>
+                  <p className="text-xs font-medium text-gray-400">Active</p>
 
                   <p className="mt-2 text-2xl font-bold text-emerald-600">
                     {activeCount}
@@ -464,9 +438,7 @@ export default function TargetSavingsPage() {
             <div className="rounded-2xl border border-white/70 bg-white/50 p-5 shadow-sm backdrop-blur-lg">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-xs font-medium text-gray-400">
-                    Completed
-                  </p>
+                  <p className="text-xs font-medium text-gray-400">Completed</p>
 
                   <p className="mt-2 text-2xl font-bold text-blue-600">
                     {completedCount}
@@ -483,9 +455,7 @@ export default function TargetSavingsPage() {
             <div className="rounded-2xl border border-white/70 bg-white/50 p-5 shadow-sm backdrop-blur-lg">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-xs font-medium text-gray-400">
-                    Paused
-                  </p>
+                  <p className="text-xs font-medium text-gray-400">Paused</p>
 
                   <p className="mt-2 text-2xl font-bold text-amber-600">
                     {pausedCount}
@@ -513,8 +483,7 @@ export default function TargetSavingsPage() {
                 </p>
 
                 <p className="mt-1 text-sm font-semibold text-gray-800">
-                  {fmtMoney(totalBalance)} of{" "}
-                  {fmtMoney(totalTargetAmount)}
+                  {fmtMoney(totalBalance)} of {fmtMoney(totalTargetAmount)}
                 </p>
               </div>
 
@@ -562,9 +531,7 @@ export default function TargetSavingsPage() {
               value={statusFilter}
               onChange={(e) =>
                 handleStatusChange(
-                  e.target.value as
-                    | "ALL"
-                    | TargetSavingsStatus,
+                  e.target.value as "ALL" | TargetSavingsStatus,
                 )
               }
               className="cursor-pointer rounded-xl border border-gray-200/50 bg-white/40 p-2.5 text-xs font-medium text-gray-700 outline-none shadow-sm transition-all hover:border-gray-300 hover:bg-white/60 focus:border-[#68123D]/40"
@@ -577,15 +544,11 @@ export default function TargetSavingsPage() {
             </select>
 
             <div className="ml-auto flex items-center gap-2">
-              <span className="text-xs font-medium text-gray-400">
-                Show
-              </span>
+              <span className="text-xs font-medium text-gray-400">Show</span>
 
               <select
                 value={limit}
-                onChange={(e) =>
-                  handleLimitChange(Number(e.target.value))
-                }
+                onChange={(e) => handleLimitChange(Number(e.target.value))}
                 className="cursor-pointer rounded-xl border border-gray-200/50 bg-white/40 p-2.5 text-xs font-medium text-gray-700 outline-none shadow-sm transition-all hover:border-gray-300 hover:bg-white/60 focus:border-[#68123D]/40"
               >
                 {[5, 10, 20, 50].map((value) => (
@@ -625,8 +588,8 @@ export default function TargetSavingsPage() {
             </h3>
 
             <p className="mb-5 max-w-xs text-xs text-red-700/80">
-              There was an issue fetching the target savings records.
-              Please try again.
+              There was an issue fetching the target savings records. Please try
+              again.
             </p>
 
             <button
@@ -647,8 +610,8 @@ export default function TargetSavingsPage() {
             </h3>
 
             <p className="max-w-xs text-xs text-gray-400">
-              There are no target savings records matching your
-              search or selected status.
+              There are no target savings records matching your search or
+              selected status.
             </p>
           </div>
         ) : (
@@ -662,37 +625,21 @@ export default function TargetSavingsPage() {
                 <table className="w-full border-collapse text-left">
                   <thead>
                     <tr className="border-b border-gray-100/50 bg-gray-50/20 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
-                      <th className="px-6 py-4 font-medium">
-                        ID
-                      </th>
+                      <th className="px-6 py-4 font-medium">ID</th>
 
-                      <th className="px-6 py-4 font-medium">
-                        User
-                      </th>
+                      <th className="px-6 py-4 font-medium">User</th>
 
-                      <th className="px-6 py-4 font-medium">
-                        Target
-                      </th>
+                      <th className="px-6 py-4 font-medium">Target</th>
 
-                      <th className="px-6 py-4 font-medium">
-                        Progress
-                      </th>
+                      <th className="px-6 py-4 font-medium">Progress</th>
 
-                      <th className="px-6 py-4 font-medium">
-                        Contribution
-                      </th>
+                      <th className="px-6 py-4 font-medium">Contribution</th>
 
-                      <th className="px-6 py-4 font-medium">
-                        Schedule
-                      </th>
+                      <th className="px-6 py-4 font-medium">Schedule</th>
 
-                      <th className="px-6 py-4 font-medium">
-                        Target Date
-                      </th>
+                      <th className="px-6 py-4 font-medium">Target Date</th>
 
-                      <th className="px-6 py-4 font-medium">
-                        Status
-                      </th>
+                      <th className="px-6 py-4 font-medium">Status</th>
 
                       <th className="px-6 py-4 text-right font-medium">
                         Actions
@@ -702,8 +649,7 @@ export default function TargetSavingsPage() {
 
                   <tbody className="divide-y divide-gray-100/30 text-sm">
                     {filteredSavings.map((saving) => {
-                      const statusStyle =
-                        getStatusStyles(saving.status);
+                      const statusStyle = getStatusStyles(saving.status);
 
                       const progress = calculateProgress(
                         saving.balance,
@@ -738,8 +684,7 @@ export default function TargetSavingsPage() {
                                 </div>
 
                                 <div className="mt-0.5 max-w-[180px] truncate text-xs text-gray-400">
-                                  {saving.user?.email ||
-                                    "No email"}
+                                  {saving.user?.email || "No email"}
                                 </div>
                               </div>
                             </div>
@@ -753,10 +698,7 @@ export default function TargetSavingsPage() {
 
                             <div className="mt-0.5 text-xs text-gray-400">
                               Target:{" "}
-                              {fmtMoney(
-                                saving.targetAmount,
-                                saving.currency,
-                              )}
+                              {fmtMoney(saving.targetAmount, saving.currency)}
                             </div>
                           </td>
 
@@ -764,10 +706,7 @@ export default function TargetSavingsPage() {
                           <td className="min-w-[180px] px-6 py-4">
                             <div className="flex items-center justify-between gap-3">
                               <span className="text-xs font-bold text-gray-800">
-                                {fmtMoney(
-                                  saving.balance,
-                                  saving.currency,
-                                )}
+                                {fmtMoney(saving.balance, saving.currency)}
                               </span>
 
                               <span className="text-[10px] font-semibold text-[#68123D]">
@@ -809,25 +748,18 @@ export default function TargetSavingsPage() {
                           {/* SCHEDULE */}
                           <td className="px-6 py-4">
                             <div className="font-semibold text-gray-700">
-                              {formatFrequency(
-                                saving.frequency,
-                              )}
+                              {formatFrequency(saving.frequency)}
                             </div>
 
                             <div className="mt-0.5 text-xs text-gray-400">
-                              Next:{" "}
-                              {formatDate(
-                                saving.nextRunAt,
-                              )}
+                              Next: {formatDate(saving.nextRunAt)}
                             </div>
                           </td>
 
                           {/* TARGET DATE */}
                           <td className="px-6 py-4">
                             <div className="font-semibold text-gray-700">
-                              {formatDate(
-                                saving.targetDate,
-                              )}
+                              {formatDate(saving.targetDate)}
                             </div>
 
                             <div className="mt-0.5 text-xs text-gray-400">
@@ -854,11 +786,7 @@ export default function TargetSavingsPage() {
                           {/* ACTION */}
                           <td className="px-6 py-4 text-right">
                             <button
-                              onClick={() =>
-                                setSelectedSavings(
-                                  saving,
-                                )
-                              }
+                              onClick={() => setSelectedSavings(saving)}
                               className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border-0 bg-neutral-900 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:bg-neutral-800 active:bg-neutral-950"
                             >
                               View
@@ -878,15 +806,12 @@ export default function TargetSavingsPage() {
               {/* PAGINATION */}
               <div className="flex items-center justify-between border-t border-gray-100/50 bg-white/20 px-6 py-4 text-xs font-medium text-gray-500">
                 <span>
-                  Page {meta.page} of {meta.totalPages} (
-                  {meta.total} total)
+                  Page {meta.page} of {meta.totalPages} ({meta.total} total)
                 </span>
 
                 <div className="flex gap-2">
                   <button
-                    onClick={() =>
-                      setPage((p) => Math.max(1, p - 1))
-                    }
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page === 1}
                     className="cursor-pointer rounded-xl border border-gray-200/50 bg-white/50 p-2 text-gray-600 shadow-sm transition-all hover:border-gray-300 hover:bg-white active:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-30"
                   >
@@ -895,16 +820,9 @@ export default function TargetSavingsPage() {
 
                   <button
                     onClick={() =>
-                      setPage((p) =>
-                        Math.min(
-                          meta.totalPages || 1,
-                          p + 1,
-                        ),
-                      )
+                      setPage((p) => Math.min(meta.totalPages || 1, p + 1))
                     }
-                    disabled={
-                      page >= (meta.totalPages || 1)
-                    }
+                    disabled={page >= (meta.totalPages || 1)}
                     className="cursor-pointer rounded-xl border border-gray-200/50 bg-white/50 p-2 text-gray-600 shadow-sm transition-all hover:border-gray-300 hover:bg-white active:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-30"
                   >
                     <HiOutlineChevronRight size={16} />
@@ -919,8 +837,7 @@ export default function TargetSavingsPage() {
 
             <div className="space-y-4 md:hidden">
               {filteredSavings.map((saving) => {
-                const statusStyle =
-                  getStatusStyles(saving.status);
+                const statusStyle = getStatusStyles(saving.status);
 
                 const progress = calculateProgress(
                   saving.balance,
@@ -948,8 +865,7 @@ export default function TargetSavingsPage() {
                           </h3>
 
                           <p className="mt-0.5 truncate text-xs text-gray-400">
-                            {saving.user?.email ||
-                              "No email"}
+                            {saving.user?.email || "No email"}
                           </p>
                         </div>
                       </div>
@@ -988,18 +904,11 @@ export default function TargetSavingsPage() {
 
                       <div className="mt-2 flex items-center justify-between text-[10px]">
                         <span className="font-semibold text-gray-700">
-                          {fmtMoney(
-                            saving.balance,
-                            saving.currency,
-                          )}
+                          {fmtMoney(saving.balance, saving.currency)}
                         </span>
 
                         <span className="text-gray-400">
-                          of{" "}
-                          {fmtMoney(
-                            saving.targetAmount,
-                            saving.currency,
-                          )}
+                          of {fmtMoney(saving.targetAmount, saving.currency)}
                         </span>
                       </div>
                     </div>
@@ -1012,10 +921,7 @@ export default function TargetSavingsPage() {
                         </span>
 
                         <span className="mt-0.5 block font-semibold text-gray-700">
-                          {fmtMoney(
-                            saving.contributionAmount,
-                            saving.currency,
-                          )}
+                          {fmtMoney(saving.contributionAmount, saving.currency)}
                         </span>
                       </div>
 
@@ -1025,9 +931,7 @@ export default function TargetSavingsPage() {
                         </span>
 
                         <span className="mt-0.5 block font-semibold text-gray-700">
-                          {formatFrequency(
-                            saving.frequency,
-                          )}
+                          {formatFrequency(saving.frequency)}
                         </span>
                       </div>
 
@@ -1037,9 +941,7 @@ export default function TargetSavingsPage() {
                         </span>
 
                         <span className="mt-0.5 block font-semibold text-gray-700">
-                          {formatDate(
-                            saving.targetDate,
-                          )}
+                          {formatDate(saving.targetDate)}
                         </span>
                       </div>
 
@@ -1049,9 +951,7 @@ export default function TargetSavingsPage() {
                         </span>
 
                         <span className="mt-0.5 block font-semibold text-gray-700">
-                          {formatDate(
-                            saving.nextRunAt,
-                          )}
+                          {formatDate(saving.nextRunAt)}
                         </span>
                       </div>
 
@@ -1061,9 +961,7 @@ export default function TargetSavingsPage() {
                         </span>
 
                         <span className="mt-0.5 block font-semibold text-gray-700">
-                          {formatDate(
-                            saving.lastRunAt,
-                          )}
+                          {formatDate(saving.lastRunAt)}
                         </span>
                       </div>
 
@@ -1091,25 +989,17 @@ export default function TargetSavingsPage() {
                       </span>
 
                       <span className="text-[10px] font-medium text-gray-400">
-                        {getTargetDateLabel(
-                          saving.targetDate,
-                          saving.status,
-                        )}
+                        {getTargetDateLabel(saving.targetDate, saving.status)}
                       </span>
                     </div>
 
                     {/* ACTION */}
                     <button
-                      onClick={() =>
-                        setSelectedSavings(saving)
-                      }
+                      onClick={() => setSelectedSavings(saving)}
                       className="inline-flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border-0 bg-neutral-900 px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-neutral-800 active:bg-neutral-950"
                     >
                       View Details
-                      <HiOutlineExternalLink
-                        size={13}
-                        className="opacity-80"
-                      />
+                      <HiOutlineExternalLink size={13} className="opacity-80" />
                     </button>
                   </div>
                 );
@@ -1118,15 +1008,12 @@ export default function TargetSavingsPage() {
               {/* MOBILE PAGINATION */}
               <div className="flex items-center justify-between rounded-2xl border border-white/60 bg-white/45 p-4 text-xs font-medium text-gray-500 shadow-sm backdrop-blur-md">
                 <span>
-                  Page {meta.page} of{" "}
-                  {meta.totalPages || 1}
+                  Page {meta.page} of {meta.totalPages || 1}
                 </span>
 
                 <div className="flex gap-2">
                   <button
-                    onClick={() =>
-                      setPage((p) => Math.max(1, p - 1))
-                    }
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page === 1}
                     className="cursor-pointer rounded-xl border border-gray-200/50 bg-white p-2.5 text-gray-600 shadow-sm transition-all hover:bg-gray-50 active:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-30"
                   >
@@ -1135,16 +1022,9 @@ export default function TargetSavingsPage() {
 
                   <button
                     onClick={() =>
-                      setPage((p) =>
-                        Math.min(
-                          meta.totalPages || 1,
-                          p + 1,
-                        ),
-                      )
+                      setPage((p) => Math.min(meta.totalPages || 1, p + 1))
                     }
-                    disabled={
-                      page >= (meta.totalPages || 1)
-                    }
+                    disabled={page >= (meta.totalPages || 1)}
                     className="cursor-pointer rounded-xl border border-gray-200/50 bg-white p-2.5 text-gray-600 shadow-sm transition-all hover:bg-gray-50 active:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-30"
                   >
                     <HiOutlineChevronRight size={16} />
@@ -1217,9 +1097,7 @@ export default function TargetSavingsPage() {
                       </span>
 
                       <span className="text-sm font-semibold text-gray-800">
-                        {getFullName(
-                          selectedSavings.user,
-                        )}
+                        {getFullName(selectedSavings.user)}
                       </span>
                     </div>
 
@@ -1229,8 +1107,7 @@ export default function TargetSavingsPage() {
                       </span>
 
                       <span className="break-all text-sm font-semibold text-gray-800">
-                        {selectedSavings.user?.email ||
-                          "N/A"}
+                        {selectedSavings.user?.email || "N/A"}
                       </span>
                     </div>
 
@@ -1240,8 +1117,7 @@ export default function TargetSavingsPage() {
                       </span>
 
                       <span className="text-sm font-semibold text-gray-800">
-                        {selectedSavings.user?.phone ||
-                          "N/A"}
+                        {selectedSavings.user?.phone || "N/A"}
                       </span>
                     </div>
 
@@ -1383,9 +1259,7 @@ export default function TargetSavingsPage() {
                       </span>
 
                       <span className="text-sm font-semibold text-gray-800">
-                        {formatFrequency(
-                          selectedSavings.frequency,
-                        )}
+                        {formatFrequency(selectedSavings.frequency)}
                       </span>
                     </div>
                   </div>
@@ -1413,9 +1287,7 @@ export default function TargetSavingsPage() {
                       </span>
 
                       <span className="text-sm font-semibold text-gray-800">
-                        {formatFrequency(
-                          selectedSavings.frequency,
-                        )}
+                        {formatFrequency(selectedSavings.frequency)}
                       </span>
                     </div>
 
@@ -1438,9 +1310,7 @@ export default function TargetSavingsPage() {
                       </span>
 
                       <span className="text-sm font-semibold text-gray-800">
-                        {formatDateTime(
-                          selectedSavings.nextRunAt,
-                        )}
+                        {formatDateTime(selectedSavings.nextRunAt)}
                       </span>
                     </div>
 
@@ -1450,9 +1320,7 @@ export default function TargetSavingsPage() {
                       </span>
 
                       <span className="text-sm font-semibold text-gray-800">
-                        {formatDateTime(
-                          selectedSavings.lastRunAt,
-                        )}
+                        {formatDateTime(selectedSavings.lastRunAt)}
                       </span>
                     </div>
 
@@ -1472,9 +1340,7 @@ export default function TargetSavingsPage() {
                       </span>
 
                       <span className="text-sm font-semibold text-gray-800">
-                        {formatDateTime(
-                          selectedSavings.lastFailureAt,
-                        )}
+                        {formatDateTime(selectedSavings.lastFailureAt)}
                       </span>
                     </div>
                   </div>
@@ -1502,10 +1368,7 @@ export default function TargetSavingsPage() {
                       </span>
 
                       {(() => {
-                        const styles =
-                          getStatusStyles(
-                            selectedSavings.status,
-                          );
+                        const styles = getStatusStyles(selectedSavings.status);
 
                         return (
                           <span
@@ -1527,9 +1390,7 @@ export default function TargetSavingsPage() {
                       </span>
 
                       <span className="text-sm font-semibold text-gray-800">
-                        {formatDate(
-                          selectedSavings.targetDate,
-                        )}
+                        {formatDate(selectedSavings.targetDate)}
                       </span>
                     </div>
 
@@ -1540,9 +1401,7 @@ export default function TargetSavingsPage() {
                         </span>
 
                         <span className="text-sm font-semibold text-gray-800">
-                          {formatDateTime(
-                            selectedSavings.completedAt,
-                          )}
+                          {formatDateTime(selectedSavings.completedAt)}
                         </span>
                       </div>
                     )}
@@ -1553,9 +1412,7 @@ export default function TargetSavingsPage() {
                       </span>
 
                       <span className="text-sm font-semibold text-gray-800">
-                        {formatDateTime(
-                          selectedSavings.createdAt,
-                        )}
+                        {formatDateTime(selectedSavings.createdAt)}
                       </span>
                     </div>
 
@@ -1565,9 +1422,7 @@ export default function TargetSavingsPage() {
                       </span>
 
                       <span className="text-sm font-semibold text-gray-800">
-                        {formatDateTime(
-                          selectedSavings.updatedAt,
-                        )}
+                        {formatDateTime(selectedSavings.updatedAt)}
                       </span>
                     </div>
                   </div>
@@ -1596,14 +1451,10 @@ export default function TargetSavingsPage() {
                       </div>
 
                       <div>
-                        <p className="text-xs text-gray-400">
-                          Created
-                        </p>
+                        <p className="text-xs text-gray-400">Created</p>
 
                         <p className="text-sm font-semibold text-gray-800">
-                          {formatDateTime(
-                            selectedSavings.createdAt,
-                          )}
+                          {formatDateTime(selectedSavings.createdAt)}
                         </p>
                       </div>
                     </div>
@@ -1622,9 +1473,7 @@ export default function TargetSavingsPage() {
                         </p>
 
                         <p className="text-sm font-semibold text-gray-800">
-                          {formatDateTime(
-                            selectedSavings.nextRunAt,
-                          )}
+                          {formatDateTime(selectedSavings.nextRunAt)}
                         </p>
                       </div>
                     </div>
@@ -1640,14 +1489,10 @@ export default function TargetSavingsPage() {
                           </div>
 
                           <div>
-                            <p className="text-xs text-gray-400">
-                              Target Date
-                            </p>
+                            <p className="text-xs text-gray-400">Target Date</p>
 
                             <p className="text-sm font-semibold text-gray-800">
-                              {formatDate(
-                                selectedSavings.targetDate,
-                              )}
+                              {formatDate(selectedSavings.targetDate)}
                             </p>
 
                             <p className="mt-0.5 text-xs text-gray-400">
@@ -1672,14 +1517,10 @@ export default function TargetSavingsPage() {
                           </div>
 
                           <div>
-                            <p className="text-xs text-gray-400">
-                              Completed
-                            </p>
+                            <p className="text-xs text-gray-400">Completed</p>
 
                             <p className="text-sm font-semibold text-gray-800">
-                              {formatDateTime(
-                                selectedSavings.completedAt,
-                              )}
+                              {formatDateTime(selectedSavings.completedAt)}
                             </p>
                           </div>
                         </div>

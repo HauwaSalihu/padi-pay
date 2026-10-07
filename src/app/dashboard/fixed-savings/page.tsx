@@ -49,18 +49,34 @@ export default function FixedSavingsPage() {
     totalPages: 0,
   };
 
-  const fmtMoney = (value?: string | number | bigint | null) => {
+  const fmtMoney = (
+    value?: string | number | bigint | null,
+    currency = "NGN",
+  ) => {
     if (value === undefined || value === null) {
-      return "₦0";
+      return currency === "NGN" ? "₦0.00" : `${currency} 0.00`;
     }
 
     const amount = Number(value);
 
     if (Number.isNaN(amount)) {
-      return "₦0";
+      return currency === "NGN" ? "₦0.00" : `${currency} 0.00`;
     }
 
-    return `₦${amount.toLocaleString("en-NG")}`;
+    // Convert kobo to naira and round to the nearest kobo
+    const nairaAmount = Math.round(amount) / 100;
+
+    if (currency === "NGN") {
+      return `₦${nairaAmount.toLocaleString("en-NG", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`;
+    }
+
+    return `${currency} ${nairaAmount.toLocaleString("en-NG", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
   };
 
   const formatDate = (value?: string | null) => {
