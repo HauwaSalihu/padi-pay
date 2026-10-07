@@ -4,16 +4,11 @@ import React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  HiOutlineHome,
   HiOutlineLogout,
   HiOutlineX,
-  HiOutlineCog,
-  HiOutlineCreditCard,
 } from "react-icons/hi";
-import { MdGroups2, MdSavings } from "react-icons/md";
-import { TbTargetArrow } from "react-icons/tb";
-import { GrMoney } from "react-icons/gr";
 
+import { AVAILABLE_DASHBOARD_PAGES } from "@/config/dashboard-pages";
 import {
   useGetProfileQuery,
   useGetAdminStatusQuery,
@@ -53,51 +48,9 @@ export default function Sidebar({ onClose }: SidebarProps) {
     }
   };
 
-  const navItems = [
-    {
-      href: "/dashboard",
-      label: "Dashboard",
-      icon: HiOutlineHome,
-      pageKey: "dashboard",
-    },
-    {
-      href: "/dashboard/transactions",
-      label: "Transactions",
-      icon: HiOutlineCreditCard,
-      pageKey: "transactions",
-    },
-    {
-      href: "/dashboard/ajo",
-      label: "Ajo",
-      icon: MdGroups2,
-      pageKey: "ajo",
-    },
-    {
-      href: "/dashboard/adashe-groups",
-      label: "Adashe Groups",
-      icon: MdGroups2,
-      pageKey: "adashe-groups",
-    },
-    {
-      href: "/dashboard/fixed-savings",
-      label: "Fixed Savings",
-      icon: MdSavings,
-      pageKey: "fixed-savings",
-    },
-    {
-      href: "/dashboard/target-savings",
-      label: "Target Savings",
-      icon: TbTargetArrow,
-      pageKey: "target-savings"
-    },
-    {
-      href: "/dashboard/spend-and-save",
-      label: "Spend And Save",
-      icon: GrMoney,
-      pageKey: "spend-and-save"
-
-    },
-  ];
+  const navItems = AVAILABLE_DASHBOARD_PAGES.filter(
+    (page) => page.pageKey !== "settings",
+  );
 
   const normalize = (v: unknown) =>
     typeof v === "string" ? v.trim().toLowerCase() : null;
@@ -135,6 +88,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
   );
   const canSeeSettings =
     isSuperAdmin || !permsLoaded || grantedKeys.has("settings");
+  const settingsPage = AVAILABLE_DASHBOARD_PAGES.find((p) => p.pageKey === "settings");
 
   return (
     <div className="flex flex-col h-full bg-white">
@@ -187,14 +141,14 @@ export default function Sidebar({ onClose }: SidebarProps) {
 
       {/* User profile, Logout & Settings */}
       <div className="p-4 border-t border-[#E1E4EA] bg-gray-50/50 flex-shrink-0">
-        {canSeeSettings && (
+        {canSeeSettings && settingsPage && (
           <Link
-            href="/dashboard/settings"
+            href={settingsPage.href}
             onClick={onClose}
             className="flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 text-[#68123D] hover:bg-gray-50 hover:text-[#181B25] mb-4"
           >
-            <HiOutlineCog size={20} />
-            <span className="text-[#68123D]">Settings</span>
+            <settingsPage.icon size={20} />
+            <span className="text-[#68123D]">{settingsPage.label}</span>
           </Link>
         )}
         <div className="flex items-center gap-3 mb-4 px-2">

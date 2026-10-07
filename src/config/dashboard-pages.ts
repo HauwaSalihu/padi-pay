@@ -1,3 +1,13 @@
+import { IconType } from "react-icons";
+import {
+  HiOutlineHome,
+  HiOutlineCreditCard,
+  HiOutlineCog,
+} from "react-icons/hi";
+import { MdGroups2, MdSavings } from "react-icons/md";
+import { TbTargetArrow } from "react-icons/tb";
+import { GrMoney } from "react-icons/gr";
+
 /**
  * Centralized registry of admin dashboard pages.
  *
@@ -14,49 +24,67 @@ export interface DashboardPageConfig {
   label: string;
   /** Short functional text describing what the page handles. */
   description: string;
+  /** URL path for the page */
+  href: string;
+  /** Icon component for the page */
+  icon: IconType;
 }
 
 export const AVAILABLE_DASHBOARD_PAGES: DashboardPageConfig[] = [
   {
     pageKey: "dashboard",
-    label: "Dashbord",
+    label: "Dashboard",
     description: "",
+    href: "/dashboard",
+    icon: HiOutlineHome,
   },
   {
     pageKey: "transactions",
     label: "Transactions",
     description: "",
+    href: "/dashboard/transactions",
+    icon: HiOutlineCreditCard,
   },
   {
     pageKey: "ajo",
     label: "Ajo",
     description: "",
+    href: "/dashboard/ajo",
+    icon: MdGroups2,
   },
   {
     pageKey: "adashe",
     label: "Adashe Groups",
-    description: ""
+    description: "",
+    href: "/dashboard/adashe-groups",
+    icon: MdGroups2,
   },
-
   {
     pageKey: "fixed-savings",
     label: "Fixed Savings",
-    description: ""
+    description: "",
+    href: "/dashboard/fixed-savings",
+    icon: MdSavings,
   },
-
   {
     pageKey: "target-savings",
     label: "Target Savings",
-    description: ""
+    description: "",
+    href: "/dashboard/target-savings",
+    icon: TbTargetArrow,
   },
   {
     pageKey: "spend-and-save",
     label: "Spend and Save",
-    description: ""
+    description: "",
+    href: "/dashboard/spend-and-save",
+    icon: GrMoney,
   },
   {
     pageKey: "settings",
     label: "Settings",
     description: "",
+    href: "/dashboard/settings",
+    icon: HiOutlineCog,
   },
 ];
