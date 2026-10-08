@@ -586,6 +586,13 @@ export const adminApi = baseApi.injectEndpoints({
       }),
       providesTags: ["User"],
     }),
+    getUserLedger: builder.query<LedgerEntry[], string>({
+      query: (walletId) => ({
+        url: `/admin-dashboard/wallets/${walletId}/ledger`,
+        method: "GET",
+      }),
+      providesTags: ["LedgerEntries" as any],
+    }),
     searchUsers: builder.query<AdminUser[], { query: string }>({
       query: ({ query }) => ({
         url: `/admin-dashboard/users/search?query=${encodeURIComponent(query)}`,
@@ -721,6 +728,7 @@ export const {
   useGetLedgerSummaryQuery,
   useGetLedgerEntriesQuery,
   useGetUsersQuery,
+  useGetUserLedgerQuery,
   useSearchUsersQuery,
   useGetAdminPermissionsQuery,
   useMakeUserAdminMutation,

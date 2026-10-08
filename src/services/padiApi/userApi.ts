@@ -45,6 +45,7 @@ export interface UserDetails {
   nextOfKin: UserNextOfKin | null;
   wallet?: {
     balance: number;
+    id?: string | null;
   };
 }
 

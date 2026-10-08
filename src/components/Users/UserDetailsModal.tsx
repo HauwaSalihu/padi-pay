@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
   HiOutlineX,
@@ -14,6 +15,7 @@ import {
   HiOutlineCurrencyDollar,
 } from "react-icons/hi";
 import { useGetUserDetailsQuery } from "@/services/padiApi/userApi";
+import UserLedgerModal from "./UserLedgerModal";
 
 interface UserDetailsModalProps {
   userId: string | null;
@@ -21,6 +23,7 @@ interface UserDetailsModalProps {
 }
 
 export default function UserDetailsModal({ userId, onClose }: UserDetailsModalProps) {
+  const [isLedgerOpen, setIsLedgerOpen] = useState(false);
   const { data: user, isLoading, isError, refetch } = useGetUserDetailsQuery(userId!, {
     skip: !userId,
   });
@@ -164,12 +167,13 @@ export default function UserDetailsModal({ userId, onClose }: UserDetailsModalPr
                     </span>
                   </div>
                 </div>
-                <Link
-                  href="/dashboard/transactions"
-                  className="text-[11px] font-semibold text-[#68123D] bg-[#68123D]/10 hover:bg-[#68123D]/15 px-3 py-1.5 rounded-xl border border-[#68123D]/10 hover:border-[#68123D]/20 transition-all cursor-pointer"
+                <button
+                  onClick={() => setIsLedgerOpen(true)}
+                  disabled={!user.wallet?.id}
+                  className="text-[11px] font-semibold text-[#68123D] bg-[#68123D]/10 hover:bg-[#68123D]/15 px-3 py-1.5 rounded-xl border border-[#68123D]/10 hover:border-[#68123D]/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   View Transactions
-                </Link>
+                </button>
               </div>
 
               {/* Account Profile */}
@@ -372,6 +376,13 @@ export default function UserDetailsModal({ userId, onClose }: UserDetailsModalPr
           </button>
         </div>
       </div>
+
+      {isLedgerOpen && user?.wallet?.id && (
+        <UserLedgerModal
+          walletId={user.wallet.id}
+          onClose={() => setIsLedgerOpen(false)}
+        />
+      )}
     </>
   );
 }
