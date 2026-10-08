@@ -42,7 +42,7 @@ export interface UserDetails {
     bvnVerificationData: BvnVerificationData;
   } | null;
   bankAccounts: UserBankAccount[];
-  nextOfKin: UserNextOfKin[];
+  nextOfKin: UserNextOfKin | null;
 }
 
 export interface AdminStatusResponse {

@@ -282,32 +282,28 @@ export default function UserDetailsModal({ userId, onClose }: UserDetailsModalPr
                     <HiOutlineUsers size={16} />
                   </div>
                   <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                    Next of Kin ({user.nextOfKin?.length ?? 0})
+                    Next of Kin
                   </h3>
                 </div>
 
-                {user.nextOfKin && user.nextOfKin.length > 0 ? (
-                  <div className="space-y-3">
-                    {user.nextOfKin.map((kin, idx) => (
-                      <div key={idx} className="border border-gray-100/70 rounded-xl p-3.5 bg-white/40 space-y-2">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-sm font-semibold text-gray-800">{kin.name || "N/A"}</span>
-                          <span className="shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border bg-[#68123D]/5 text-[#68123D] border-[#68123D]/10 capitalize">
-                            {kin.relationship || "N/A"}
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
-                          <div className="flex items-center gap-1.5 text-gray-500 min-w-0">
-                            <HiOutlineMail size={12} className="shrink-0" />
-                            <span className="truncate">{kin.email || "No email"}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 text-gray-500 min-w-0">
-                            <HiOutlinePhone size={12} className="shrink-0" />
-                            <span className="truncate">{kin.phone || "No phone"}</span>
-                          </div>
-                        </div>
+                {user.nextOfKin ? (
+                  <div className="border border-gray-100/70 rounded-xl p-3.5 bg-white/40 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-semibold text-gray-800">{user.nextOfKin.name || "N/A"}</span>
+                      <span className="shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border bg-[#68123D]/5 text-[#68123D] border-[#68123D]/10 capitalize">
+                        {user.nextOfKin.relationship || "N/A"}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+                      <div className="flex items-center gap-1.5 text-gray-500 min-w-0">
+                        <HiOutlineMail size={12} className="shrink-0" />
+                        <span className="truncate">{user.nextOfKin.email || "No email"}</span>
                       </div>
-                    ))}
+                      <div className="flex items-center gap-1.5 text-gray-500 min-w-0">
+                        <HiOutlinePhone size={12} className="shrink-0" />
+                        <span className="truncate">{user.nextOfKin.phone || "No phone"}</span>
+                      </div>
+                    </div>
                   </div>
                 ) : (
                   <p className="text-xs text-gray-400">No next of kin on file.</p>
