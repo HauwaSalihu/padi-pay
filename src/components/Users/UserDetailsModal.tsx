@@ -174,6 +174,13 @@ export default function UserDetailsModal({ userId, onClose }: UserDetailsModalPr
                 >
                   View Transactions
                 </button>
+                <button
+                  onClick={() => setIsLedgerOpen(true)}
+                  disabled={!user.wallet?.id}
+                  className="text-[11px] font-semibold text-[#68123D] bg-[#68123D]/10 hover:bg-[#68123D]/15 px-3 py-1.5 rounded-xl border border-[#68123D]/10 hover:border-[#68123D]/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  View Savings
+                </button>
               </div>
 
               {/* Account Profile */}
