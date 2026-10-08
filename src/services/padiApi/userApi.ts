@@ -8,13 +8,32 @@ export interface UserNextOfKin {
   relationship: string | null;
 }
 
-export interface UserBankAccount {
+export interface StellersPassthroughAccount {
   id: string;
-  bankName: string | null;
-  bankCode: string | null;
+  status: boolean;
+  accountNumber: string | null;
   accountName: string | null;
-  last4: string | null;
-  status: string;
+  accountReference: string | null;
+  stellersReference: string | null;
+  walletId: string;
+}
+
+export interface PaystackMandate {
+  id: string;
+  nuban: string | null;
+  bank_code: string | null;
+  bank_name: string | null;
+  account_name: string | null;
+  paystack_customer_id: string;
+  paystack_reference: string | null;
+  paystack_access_code: string | null;
+  paystack_auth_code: string | null;
+  paystack_signature: string | null;
+  type: string;
+  isCreated: boolean;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Variable JSONB payload returned from the verification provider (e.g. Paystack).
@@ -41,7 +60,8 @@ export interface UserDetails {
     bvnVerifiedAt: string | null;
     bvnVerificationData: BvnVerificationData;
   } | null;
-  bankAccounts: UserBankAccount[];
+  stellersPassthroughAccounts: StellersPassthroughAccount | null;
+  paystackMandates: PaystackMandate[];
   nextOfKin: UserNextOfKin | null;
   wallet?: {
     balance: number;

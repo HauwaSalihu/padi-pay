@@ -274,41 +274,114 @@ export default function UserDetailsModal({ userId, onClose }: UserDetailsModalPr
                   <p className="text-xs text-gray-400">No BVN identity information on file.</p>
                 )}
               </div>
-{/* Bank Accounts */}
+{/* Virtual Accounts */}
               <div className="bg-white/40 border border-gray-100/60 rounded-2xl p-5 space-y-4 shadow-sm backdrop-blur-sm">
                 <div className="flex items-center gap-2 border-b border-gray-100/50 pb-2.5">
                   <div className="p-1.5 bg-[#68123D]/5 text-[#68123D] rounded-lg">
                     <HiOutlineCreditCard size={16} />
                   </div>
                   <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                    Bank Accounts ({user.bankAccounts?.length ?? 0})
+                    Virtual Accounts
                   </h3>
                 </div>
 
-                {user.bankAccounts && user.bankAccounts.length > 0 ? (
+                {user.stellersPassthroughAccounts ? (
                   <div className="space-y-3">
-                    {user.bankAccounts.map((acc) => (
-                      <div
-                        key={acc.id}
-                        className="flex items-center justify-between gap-3 border border-gray-100/70 rounded-xl p-3.5 bg-white/40"
-                      >
-                        <div className="min-w-0">
-                          <div className="text-sm font-semibold text-gray-800 truncate">
-                            {acc.accountName || "Unnamed account"}
-                          </div>
-                          <div className="text-xs text-gray-400 mt-0.5">
-                            {acc.bankName || "Unknown bank"}
-                            {acc.last4 ? ` •••• ${acc.last4}` : ""}
-                          </div>
+                    <div className="flex items-center justify-between gap-3 border border-gray-100/70 rounded-xl p-3.5 bg-white/40">
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold text-gray-800 truncate">
+                          {user.stellersPassthroughAccounts.accountName || "Unnamed account"}
                         </div>
-                        <span className="shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border bg-indigo-50/50 text-indigo-700 border-indigo-100/60 capitalize">
-                          {acc.status?.toLowerCase() || "Unknown"}
-                        </span>
+                        <div className="text-xs text-gray-400 mt-0.5 font-mono">
+                          Number: {user.stellersPassthroughAccounts.accountNumber || "N/A"}
+                        </div>
+                        {user.stellersPassthroughAccounts.accountReference && (
+                          <div className="text-[11px] text-gray-400 mt-1">
+                            Ref: {user.stellersPassthroughAccounts.accountReference}
+                          </div>
+                        )}
+                        {user.stellersPassthroughAccounts.stellersReference && (
+                          <div className="text-[11px] text-gray-400 mt-0.5">
+                            Stellers Ref: {user.stellersPassthroughAccounts.stellersReference}
+                          </div>
+                        )}
+                      </div>
+                      <span
+                        className={`shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+                          user.stellersPassthroughAccounts.status
+                            ? "bg-emerald-50/50 text-emerald-700 border-emerald-100/60"
+                            : "bg-amber-50/50 text-amber-700 border-amber-100/60"
+                        }`}
+                      >
+                        {user.stellersPassthroughAccounts.status ? "Active" : "Inactive"}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-400">No virtual accounts on file.</p>
+                )}
+              </div>
+
+              {/* Linked Accounts */}
+              <div className="bg-white/40 border border-gray-100/60 rounded-2xl p-5 space-y-4 shadow-sm backdrop-blur-sm">
+                <div className="flex items-center gap-2 border-b border-gray-100/50 pb-2.5">
+                  <div className="p-1.5 bg-[#68123D]/5 text-[#68123D] rounded-lg">
+                    <HiOutlineShieldCheck size={16} />
+                  </div>
+                  <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    Linked Accounts ({user.paystackMandates?.length ?? 0})
+                  </h3>
+                </div>
+
+                {user.paystackMandates && user.paystackMandates.length > 0 ? (
+                  <div className="space-y-3">
+                    {user.paystackMandates.map((mandate) => (
+                      <div
+                        key={mandate.id}
+                        className="border border-gray-100/70 rounded-xl p-3.5 bg-white/40 space-y-2"
+                      >
+                        <div className="flex items-center justify-between gap-3 border-b border-gray-100/50 pb-2">
+                          <div className="min-w-0">
+                            <div className="text-sm font-semibold text-gray-800 truncate">
+                              {mandate.account_name || "Unnamed mandate"}
+                            </div>
+                            <div className="text-xs text-gray-400 mt-0.5">
+                              {mandate.bank_name || "Unknown Bank"}
+                              {mandate.nuban ? ` • ${mandate.nuban}` : ""}
+                            </div>
+                          </div>
+                          <span
+                            className={`shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+                              mandate.isActive
+                                ? "bg-emerald-50/50 text-emerald-700 border-emerald-100/60"
+                                : "bg-amber-50/50 text-amber-700 border-amber-100/60"
+                            }`}
+                          >
+                            {mandate.isActive ? "Active" : "Inactive"}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-gray-500 font-medium">
+                          <div>
+                            <span className="text-gray-400 block font-normal">Auth Type</span>
+                            <span className="font-semibold text-gray-700">{mandate.type || "N/A"}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-400 block font-normal">Paystack Customer ID</span>
+                            <span className="font-mono text-gray-700">{mandate.paystack_customer_id || "N/A"}</span>
+                          </div>
+                          {mandate.paystack_reference && (
+                            <div className="sm:col-span-2">
+                              <span className="text-gray-400 block font-normal">Paystack Reference</span>
+                              <span className="font-mono text-gray-700 break-all">{mandate.paystack_reference}</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-xs text-gray-400">No bank accounts on file.</p>
+                  <p className="text-xs text-gray-400">No linked accounts on file.</p>
                 )}
               </div>
 {/* Next of Kin */}
