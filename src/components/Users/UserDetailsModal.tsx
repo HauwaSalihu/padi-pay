@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   HiOutlineX,
   HiOutlineUser,
@@ -10,6 +11,7 @@ import {
   HiOutlineCreditCard,
   HiOutlineShieldCheck,
   HiOutlineUsers,
+  HiOutlineCurrencyDollar,
 } from "react-icons/hi";
 import { useGetUserDetailsQuery } from "@/services/padiApi/userApi";
 
@@ -44,6 +46,15 @@ export default function UserDetailsModal({ userId, onClose }: UserDetailsModalPr
       day: "numeric",
       year: "numeric",
     });
+  };
+
+  const formatCurrency = (amountKobo?: number | null) => {
+    if (amountKobo === undefined || amountKobo === null) return "₦0.00";
+    const amountNaira = amountKobo / 100;
+    return `₦${amountNaira.toLocaleString("en-NG", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
   };
 
   const StatusBadge = ({ verified }: { verified: boolean }) => (
@@ -138,6 +149,27 @@ export default function UserDetailsModal({ userId, onClose }: UserDetailsModalPr
                     {user.phone || "No phone on file"}
                   </div>
                 </div>
+              </div>
+
+              {/* Wallet Balance */}
+              <div className="bg-[#68123D]/5 border border-[#68123D]/15 rounded-2xl p-5 flex items-center justify-between shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-[#68123D]/10 text-[#68123D] rounded-xl">
+                    <HiOutlineCurrencyDollar size={20} />
+                  </div>
+                  <div>
+                    <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider block">Wallet Balance</span>
+                    <span className="text-xl font-bold text-[#68123D] mt-0.5 block">
+                      {formatCurrency(user.wallet?.balance)}
+                    </span>
+                  </div>
+                </div>
+                <Link
+                  href="/dashboard/transactions"
+                  className="text-[11px] font-semibold text-[#68123D] bg-[#68123D]/10 hover:bg-[#68123D]/15 px-3 py-1.5 rounded-xl border border-[#68123D]/10 hover:border-[#68123D]/20 transition-all cursor-pointer"
+                >
+                  View Transactions
+                </Link>
               </div>
 
               {/* Account Profile */}

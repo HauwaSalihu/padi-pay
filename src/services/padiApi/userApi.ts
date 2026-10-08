@@ -43,6 +43,9 @@ export interface UserDetails {
   } | null;
   bankAccounts: UserBankAccount[];
   nextOfKin: UserNextOfKin | null;
+  wallet?: {
+    balance: number;
+  };
 }
 
 export interface AdminStatusResponse {
