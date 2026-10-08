@@ -117,7 +117,7 @@ export default function UserLedgerModal({ walletId, onClose }: UserLedgerModalPr
                         <span className={`text-base font-extrabold ${isCredit ? "text-emerald-600" : "text-rose-600"}`}>
                           {isCredit ? "+" : "-"}{formatCurrency(entry.amount)}
                         </span>
-                        <span className="block text-[11px] text-gray-400 font-medium mt-0.5">Bal: {formatCurrency(entry.balanceAfter)}</span>
+                        {/* <span className="block text-[11px] text-gray-400 font-medium mt-0.5">Bal: {formatCurrency(entry.balanceAfter)}</span> */}
                       </div>
                     </div>
 
