@@ -392,6 +392,92 @@ export interface AdasheGroupDetailsResponse {
   data: AdasheGroup;
 }
 
+export interface UserSavingsAjo {
+  membershipId: string;
+  status: string;
+  hands?: number | null;
+  contributionAmount?: number | null;
+  totalContributionPaid?: number | null;
+  totalRounds?: number | null;
+  totalRoundsPaid?: number | null;
+  createdAt: string;
+  group: {
+    id: string;
+    name: string;
+    description?: string | null;
+    status: string;
+    frequency: string;
+    contributionAmount: number;
+    targetAmount: number;
+    groupSize: number;
+    totalCycles: number;
+    admin: {
+      id: string;
+      first_name: string;
+      last_name: string;
+      email: string | null;
+    } | null;
+  };
+  slots: {
+    id: string;
+    position: number;
+    isPaidOut: boolean;
+  }[];
+  contributions: {
+    id: string;
+    amount: number;
+    status: string;
+    paidAt?: string | null;
+    transactionId?: string | null;
+    reference?: string | null;
+    createdAt: string;
+  }[];
+}
+
+export interface UserSavingsAdashe {
+  membershipId: string;
+  status: string;
+  name?: string | null;
+  phone?: string | null;
+  group: {
+    id: string;
+    name: string;
+    description?: string | null;
+    minAmount?: number | null;
+    maxGroupSize?: number | null;
+    privacy: string;
+    admin: {
+      id: string;
+      first_name: string;
+      last_name: string;
+      email: string | null;
+    } | null;
+  };
+  cycles: {
+    id: string;
+    contributionAmount: number;
+    amountContributed: number;
+    cycleCount: number;
+    startDate: string;
+    endDate: string;
+    status: string;
+  }[];
+  contributions: {
+    id: string;
+    amount: number;
+    status: string;
+    paidAt?: string | null;
+    transactionId?: string | null;
+    reference?: string | null;
+    createdAt: string;
+  }[];
+}
+
+export interface UserSavingsResponse {
+  ajo: UserSavingsAjo[];
+  adashe: UserSavingsAdashe[];
+}
+
 export type FixedSavingsStatus = "ACTIVE" | "MATURED" | "BROKEN";
 
 export interface FixedSavingsUser {
@@ -593,6 +679,13 @@ export const adminApi = baseApi.injectEndpoints({
       }),
       providesTags: ["LedgerEntries" as any],
     }),
+    getUserSavings: builder.query<UserSavingsResponse, string>({
+      query: (userId) => ({
+        url: `/admin-dashboard/users/${userId}/savings`,
+        method: "GET",
+      }),
+      providesTags: ["UserSavings" as any],
+    }),
     searchUsers: builder.query<AdminUser[], { query: string }>({
       query: ({ query }) => ({
         url: `/admin-dashboard/users/search?query=${encodeURIComponent(query)}`,
@@ -739,5 +832,6 @@ export const {
   useGetFixedSavingsQuery,
   useGetTargetSavingsQuery,
   useGetTargetSavingsDetailsQuery,
-  useGetSpendAndSaveQuery
+  useGetSpendAndSaveQuery,
+  useGetUserSavingsQuery
 } = adminApi;

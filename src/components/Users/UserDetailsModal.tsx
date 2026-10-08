@@ -16,6 +16,7 @@ import {
 } from "react-icons/hi";
 import { useGetUserDetailsQuery } from "@/services/padiApi/userApi";
 import UserLedgerModal from "./UserLedgerModal";
+import UserSavingsModal from "./UserSavingsModal";
 
 interface UserDetailsModalProps {
   userId: string | null;
@@ -24,6 +25,7 @@ interface UserDetailsModalProps {
 
 export default function UserDetailsModal({ userId, onClose }: UserDetailsModalProps) {
   const [isLedgerOpen, setIsLedgerOpen] = useState(false);
+  const [isSavingsOpen, setIsSavingsOpen] = useState(false);
   const { data: user, isLoading, isError, refetch } = useGetUserDetailsQuery(userId!, {
     skip: !userId,
   });
@@ -175,7 +177,7 @@ export default function UserDetailsModal({ userId, onClose }: UserDetailsModalPr
                   View Transactions
                 </button>
                 <button
-                  onClick={() => setIsLedgerOpen(true)}
+                  onClick={() => setIsSavingsOpen(true)}
                   disabled={!user.wallet?.id}
                   className="text-[11px] font-semibold text-[#68123D] bg-[#68123D]/10 hover:bg-[#68123D]/15 px-3 py-1.5 rounded-xl border border-[#68123D]/10 hover:border-[#68123D]/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -461,6 +463,13 @@ export default function UserDetailsModal({ userId, onClose }: UserDetailsModalPr
         <UserLedgerModal
           walletId={user.wallet.id}
           onClose={() => setIsLedgerOpen(false)}
+        />
+      )}
+
+      {isSavingsOpen && userId && (
+        <UserSavingsModal
+          userId={userId}
+          onClose={() => setIsSavingsOpen(false)}
         />
       )}
     </>
