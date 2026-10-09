@@ -90,7 +90,7 @@ export default function UserDetailsModal({ userId, onClose }: UserDetailsModalPr
       <div className="fixed inset-0 bg-black/15 backdrop-blur-md z-40 transition-opacity duration-300" onClick={onClose} />
 
       {/* Slide-over drawer panel */}
-      <div className="fixed top-4 right-4 bottom-4 w-[calc(100% - 2rem)] md:w-full md:max-w-xl bg-white/85 backdrop-blur-2xl border border-white/50 shadow-[0_24px_60px_rgba(0,0,0,0.12)] rounded-3xl overflow-hidden flex flex-col text-sm text-[#181B25] drawer-animate z-50">
+      <div className="fixed top-0 right-0 bottom-0 left-0 md:top-4 md:right-4 md:bottom-4 md:left-auto w-full md:max-w-xl bg-white/85 backdrop-blur-2xl border-0 md:border md:border-white/50 shadow-[0_24px_60px_rgba(0,0,0,0.12)] rounded-none md:rounded-3xl overflow-hidden flex flex-col text-sm text-[#181B25] drawer-animate z-50">
         {/* Modal Header */}
         <div className="flex justify-between items-center border-b border-gray-100/50 p-6">
           <div className="space-y-1">
@@ -169,20 +169,22 @@ export default function UserDetailsModal({ userId, onClose }: UserDetailsModalPr
                     </span>
                   </div>
                 </div>
-                <button
-                  onClick={() => setIsLedgerOpen(true)}
-                  disabled={!user.wallet?.id}
-                  className="text-[11px] font-semibold text-[#68123D] bg-[#68123D]/10 hover:bg-[#68123D]/15 px-3 py-1.5 rounded-xl border border-[#68123D]/10 hover:border-[#68123D]/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  View Transactions
-                </button>
-                <button
-                  onClick={() => setIsSavingsOpen(true)}
-                  disabled={!user.wallet?.id}
-                  className="text-[11px] font-semibold text-[#68123D] bg-[#68123D]/10 hover:bg-[#68123D]/15 px-3 py-1.5 rounded-xl border border-[#68123D]/10 hover:border-[#68123D]/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  View Savings
-                </button>
+                <div className="flex flex-col gap-2 shrink-0">
+                  <button
+                    onClick={() => setIsLedgerOpen(true)}
+                    disabled={!user.wallet?.id}
+                    className="text-[11px] font-semibold text-[#68123D] bg-[#68123D]/10 hover:bg-[#68123D]/15 px-3 py-1.5 rounded-xl border border-[#68123D]/10 hover:border-[#68123D]/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-center"
+                  >
+                    View Transactions
+                  </button>
+                  <button
+                    onClick={() => setIsSavingsOpen(true)}
+                    disabled={!user.wallet?.id}
+                    className="text-[11px] font-semibold text-[#68123D] bg-[#68123D]/10 hover:bg-[#68123D]/15 px-3 py-1.5 rounded-xl border border-[#68123D]/10 hover:border-[#68123D]/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-center"
+                  >
+                    View Savings
+                  </button>
+                </div>
               </div>
 
               {/* Account Profile */}
