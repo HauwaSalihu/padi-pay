@@ -68,7 +68,7 @@ const STATUS_STYLES: Record<string, string> = {
   CANCELLED: "bg-rose-50 text-rose-700 border-rose-100",
 };
 
-const formatMoney = (
+const formatMoney: any = (
   value?: string | number | bigint | null,
   currency = "NGN",
 ) => {
@@ -291,7 +291,7 @@ export default function GroupTargetSavingsView() {
       ? Math.min(100, Math.max(0, (summary.balance / summary.target) * 100))
       : 0;
 
-  const selectedGroup = groups.find((group) => group.id === selectedGroupId);
+  const selectedGroup: any = groups.find((group) => group.id === selectedGroupId);
 
   const handleSearch = (value: string) => {
     setSearchQuery(value);
@@ -718,7 +718,7 @@ export default function GroupTargetSavingsView() {
         ) : !isError ? (
           <>
             <div className="space-y-4">
-              {filteredGroups.map((group) => {
+              {filteredGroups.map((group: any) => {
                 const progress = getProgress(group);
 
                 return (
