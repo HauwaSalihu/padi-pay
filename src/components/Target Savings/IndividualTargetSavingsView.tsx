@@ -154,8 +154,7 @@ const getInitials = (user?: TargetSavings["user"] | null) => {
 
 const getStatusClass = (status?: string | null) => {
   return (
-    STATUS_STYLES[status ?? ""] ??
-    "bg-gray-50 text-gray-600 border-gray-100"
+    STATUS_STYLES[status ?? ""] ?? "bg-gray-50 text-gray-600 border-gray-100"
   );
 };
 
@@ -194,9 +193,7 @@ const getDaysRemaining = (targetDate?: string | null) => {
   const now = new Date();
   now.setHours(0, 0, 0, 0);
 
-  return Math.ceil(
-    (target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
-  );
+  return Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 };
 
 const getTargetDateLabel = (savings: TargetSavings) => {
@@ -268,18 +265,12 @@ export default function IndividualTargetSavingsView() {
      LIST API
   ================================================================ */
 
-  const {
-    data,
-    isLoading,
-    isFetching,
-    isError,
-    error,
-    refetch,
-  } = useGetTargetSavingsQuery({
-    page,
-    limit,
-    status: statusFilter === "ALL" ? undefined : statusFilter,
-  });
+  const { data, isLoading, isFetching, isError, error, refetch } =
+    useGetTargetSavingsQuery({
+      page,
+      limit,
+      status: statusFilter === "ALL" ? undefined : statusFilter,
+    });
 
   /* ================================================================
      DETAILS API
@@ -308,15 +299,18 @@ export default function IndividualTargetSavingsView() {
   const selectedSavings = detailsResponse?.data;
 
   /* ================================================================
-     SEARCH AND SUMMARY
-  ================================================================ */
+   SEARCH AND SUMMARY
+================================================================ */
 
   const filteredSavings = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
 
-    if (!normalizedQuery) return savings;
-
     return savings.filter((item) => {
+      // Apply status filter locally as well.
+      const matchesStatus =
+        statusFilter === "ALL" || item.status === statusFilter;
+
+      // Apply search filter.
       const searchableValues = [
         item.id,
         item.name,
@@ -329,13 +323,17 @@ export default function IndividualTargetSavingsView() {
         item.currency,
       ];
 
-      return searchableValues.some((value) =>
-        String(value ?? "")
-          .toLowerCase()
-          .includes(normalizedQuery),
-      );
+      const matchesSearch =
+        !normalizedQuery ||
+        searchableValues.some((value) =>
+          String(value ?? "")
+            .toLowerCase()
+            .includes(normalizedQuery),
+        );
+
+      return matchesStatus && matchesSearch;
     });
-  }, [savings, searchQuery]);
+  }, [savings, searchQuery, statusFilter]);
 
   const summary = useMemo(() => {
     return savings.reduce(
@@ -425,7 +423,7 @@ export default function IndividualTargetSavingsView() {
   ================================================================ */
 
   return (
-    <div className="relative space-y-6 font-satoshi">
+    <div className="relative min-w-0 w-full max-w-full space-y-6 overflow-x-clip font-satoshi">
       <style>{`
         @keyframes slideIn {
           from {
@@ -486,7 +484,7 @@ export default function IndividualTargetSavingsView() {
           SUMMARY CARDS
       ============================================================ */}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <SummaryCard
           label="Total Plans"
           value={summary.totalPlans.toLocaleString("en-NG")}
@@ -558,8 +556,8 @@ export default function IndividualTargetSavingsView() {
           SEARCH AND FILTER TOOLBAR
       ============================================================ */}
 
-      <div className="flex flex-col items-center justify-between gap-4 rounded-2xl border border-white/60 bg-white/45 p-4 shadow-sm backdrop-blur-md sm:flex-row">
-        <div className="relative w-full sm:max-w-md sm:flex-1">
+      <div className="flex min-w-0 flex-col items-stretch justify-between gap-4 rounded-2xl border border-white/60 bg-white/45 p-3 shadow-sm backdrop-blur-md sm:flex-row sm:items-center sm:p-4">
+        <div className="relative w-full min-w-0 sm:max-w-md sm:flex-1">
           <HiOutlineSearch
             size={18}
             className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
@@ -574,7 +572,7 @@ export default function IndividualTargetSavingsView() {
           />
         </div>
 
-        <div className="flex w-full flex-wrap items-center justify-between gap-3 sm:w-auto sm:justify-end">
+        <div className="flex w-full min-w-0 flex-wrap items-center justify-between gap-3 sm:w-auto sm:justify-end">
           <select
             value={statusFilter}
             onChange={(event) => handleStatusChange(event.target.value)}
@@ -655,7 +653,7 @@ export default function IndividualTargetSavingsView() {
           DESKTOP TABLE
       ============================================================ */}
 
-      <div className="hidden overflow-hidden rounded-2xl border border-white/70 bg-white/50 shadow-sm backdrop-blur-lg lg:block">
+      <div className="hidden min-w-0 max-w-full overflow-hidden rounded-2xl border border-white/70 bg-white/50 shadow-sm backdrop-blur-lg lg:block">
         <div className="flex items-center justify-between gap-3 border-b border-gray-100/50 px-6 py-4">
           <div>
             <h3 className="font-semibold text-[#181B25]">
@@ -668,9 +666,7 @@ export default function IndividualTargetSavingsView() {
           </div>
 
           {isFetching && !isLoading && (
-            <span className="text-xs text-gray-400">
-              Updating records...
-            </span>
+            <span className="text-xs text-gray-400">Updating records...</span>
           )}
         </div>
 
@@ -680,7 +676,7 @@ export default function IndividualTargetSavingsView() {
           <EmptyState text="No savings plans match your current search or filters." />
         ) : !isError ? (
           <>
-            <div className="overflow-x-auto">
+            <div className="w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain">
               <table className="w-full min-w-[1150px] border-collapse text-left">
                 <thead>
                   <tr className="border-b border-gray-100/50 bg-gray-50/30 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
@@ -846,7 +842,7 @@ export default function IndividualTargetSavingsView() {
           MOBILE AND TABLET CARDS
       ============================================================ */}
 
-      <div className="space-y-4 lg:hidden">
+      <div className="min-w-0 space-y-4 lg:hidden">
         <div className="flex items-center justify-between gap-3 px-1">
           <div>
             <h3 className="font-semibold text-[#181B25]">
@@ -876,7 +872,7 @@ export default function IndividualTargetSavingsView() {
                 return (
                   <article
                     key={item.id}
-                    className="space-y-4 rounded-2xl border border-white/70 bg-white/60 p-5 shadow-sm backdrop-blur-md"
+                    className="space-y-4 min-w-0 max-w-full rounded-2xl border border-white/70 bg-white/60 p-5 shadow-sm backdrop-blur-md"
                   >
                     {/* CARD HEADER */}
 
@@ -923,10 +919,7 @@ export default function IndividualTargetSavingsView() {
                     <div className="grid grid-cols-2 gap-4 border-y border-gray-100/70 py-4">
                       <DetailItem
                         label="Target Amount"
-                        value={formatMoney(
-                          item.targetAmount,
-                          item.currency,
-                        )}
+                        value={formatMoney(item.targetAmount, item.currency)}
                         highlight
                       />
 
@@ -981,10 +974,7 @@ export default function IndividualTargetSavingsView() {
                       </div>
 
                       <p className="mt-2 text-xs text-gray-500">
-                        {formatMoney(
-                          getRemainingAmount(item),
-                          item.currency,
-                        )}{" "}
+                        {formatMoney(getRemainingAmount(item), item.currency)}{" "}
                         remaining to reach target
                       </p>
                     </div>
@@ -1036,7 +1026,7 @@ export default function IndividualTargetSavingsView() {
             role="dialog"
             aria-modal="true"
             aria-label="Individual target savings details"
-            className="drawer-animate fixed bottom-4 right-4 top-4 z-50 flex w-[calc(100%-2rem)] flex-col overflow-hidden rounded-3xl border border-white/50 bg-white/95 text-sm text-[#181B25] shadow-[0_24px_60px_rgba(0,0,0,0.12)] backdrop-blur-2xl md:w-full md:max-w-2xl"
+            className="drawer-animate fixed inset-y-2 left-2 right-2 z-50 flex min-w-0 flex-col overflow-hidden rounded-2xl border border-white/50 bg-white/95 text-sm text-[#181B25] shadow-[0_24px_60px_rgba(0,0,0,0.12)] backdrop-blur-2xl sm:inset-y-4 sm:left-4 sm:right-4 sm:rounded-3xl md:left-auto md:right-4 md:w-full md:max-w-2xl"
           >
             {/* HEADER */}
 
@@ -1488,9 +1478,7 @@ function DetailItem({
 
       <span
         className={`break-words text-sm ${
-          highlight
-            ? "font-bold text-gray-950"
-            : "font-semibold text-gray-800"
+          highlight ? "font-bold text-gray-950" : "font-semibold text-gray-800"
         }`}
       >
         {value || "N/A"}
@@ -1553,18 +1541,14 @@ function Pagination({
 }) {
   const start = meta.total === 0 ? 0 : (page - 1) * meta.limit + 1;
 
-  const end = Math.min(
-    (page - 1) * meta.limit + itemCount,
-    meta.total,
-  );
+  const end = Math.min((page - 1) * meta.limit + itemCount, meta.total);
 
   const totalPages = Math.max(meta.totalPages, 1);
 
   return (
     <div className="flex flex-col justify-between gap-3 border-t border-gray-100/50 bg-white/20 px-4 py-4 text-xs font-medium text-gray-500 sm:flex-row sm:items-center sm:px-6">
       <span>
-        Showing{" "}
-        <span className="font-semibold text-gray-700">{start}</span> to{" "}
+        Showing <span className="font-semibold text-gray-700">{start}</span> to{" "}
         <span className="font-semibold text-gray-700">{end}</span> of{" "}
         <span className="font-semibold text-gray-700">{meta.total}</span>{" "}
         records

@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useMemo, useState } from "react";
@@ -11,47 +12,99 @@ import {
   HiOutlineUsers,
   HiOutlineCurrencyDollar,
   HiOutlineCalendar,
-  HiOutlineShieldCheck,
   HiOutlineRefresh,
-  HiOutlineClock,
   HiOutlineCheckCircle,
   HiOutlineExclamationCircle,
+  HiOutlineClock,
+  HiOutlineInformationCircle,
 } from "react-icons/hi";
 
-import { useGetTargetSavingsQuery } from "@/services/padiApi/adminApi";
+import {
+  useGetGroupTargetSavingsQuery,
+  useGetGroupTargetSavingsDetailsQuery,
+  TargetSavingsStatus,
+} from "@/services/padiApi/adminApi";
 
-type SavingsStatus =
-  | "ACTIVE"
-  | "COMPLETED"
-  | "PAUSED"
-  | "CANCELLED"
-  | string;
+/* ================================================================
+   TYPES
+================================================================ */
 
-type GroupTargetSavings = {
+type SavingsStatus = TargetSavingsStatus;
+
+type StatusFilter = "ALL" | SavingsStatus;
+
+interface SavingsUser {
+  id?: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+}
+
+interface GroupContribution {
+  id: string;
+  amount?: string | number | null;
+  status?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  user?: SavingsUser | null;
+  groupTargetSavingsMember?: {
+    id?: string;
+    user?: SavingsUser | null;
+  } | null;
+}
+
+interface GroupMember {
+  id: string;
+  userId?: string | null;
+  status?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  user?: SavingsUser | null;
+  contributions?: GroupContribution[];
+}
+
+interface GroupApplication {
+  id: string;
+  userId?: string | null;
+  status?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  user?: SavingsUser | null;
+}
+
+interface GroupTargetSavings {
   id: string;
   name?: string | null;
+  description?: string | null;
   status?: SavingsStatus | null;
-  targetAmount?: string | number | bigint | null;
-  balance?: string | number | bigint | null;
-  contributionAmount?: string | number | bigint | null;
+  targetAmount?: string | number | null;
+  balance?: string | number | null;
+  contributionAmount?: string | number | null;
   frequency?: string | null;
   currency?: string | null;
   targetDate?: string | null;
   createdAt?: string | null;
   updatedAt?: string | null;
   userId?: string | null;
-  user?: {
-    first_name?: string | null;
-    last_name?: string | null;
-    email?: string | null;
-    phone?: string | null;
-  } | null;
+  user?: SavingsUser | null;
   groupSize?: number | null;
-  members?: unknown[];
-  description?: string | null;
-};
+  members?: GroupMember[];
+  groupMemberContributions?: GroupContribution[];
+  groupMemberApplications?: GroupApplication[];
+  _count?: {
+    members?: number;
+    groupMemberContributions?: number;
+    groupMemberApplications?: number;
+  };
+}
 
-type StatusFilter = "ALL" | "ACTIVE" | "COMPLETED" | "PAUSED" | "CANCELLED";
+interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
 
 const STATUS_OPTIONS: { label: string; value: StatusFilter }[] = [
   { label: "All statuses", value: "ALL" },
@@ -68,8 +121,17 @@ const STATUS_STYLES: Record<string, string> = {
   CANCELLED: "bg-rose-50 text-rose-700 border-rose-100",
 };
 
-const formatMoney: any = (
-  value?: string | number | bigint | null,
+/* ================================================================
+   FORMATTERS
+================================================================ */
+
+/**
+ * Assumes money is stored in kobo.
+ * Example: 100000 kobo = ₦1,000.00.
+ * Remove "/ 100" if your backend returns values already in naira.
+ */
+const formatMoney = (
+  value?: string | number | null,
   currency = "NGN",
 ) => {
   if (value === undefined || value === null || value === "") {
@@ -82,15 +144,17 @@ const formatMoney: any = (
     return currency === "NGN" ? "₦0.00" : `${currency} 0.00`;
   }
 
+  const nairaAmount = amount / 100;
+
   try {
     return new Intl.NumberFormat("en-NG", {
       style: "currency",
       currency,
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(amount / 100);
+    }).format(nairaAmount);
   } catch {
-    return `${currency} ${(amount / 100).toFixed(2)}`;
+    return `${currency} ${nairaAmount.toFixed(2)}`;
   }
 };
 
@@ -112,7 +176,7 @@ const formatFrequency = (frequency?: string | null) => {
     .replace(/\b\w/g, (character) => character.toUpperCase());
 };
 
-const formatDate = (value?: string | null) => {
+const formatDate: any = (value?: string | null) => {
   if (!value) return "N/A";
 
   const date = new Date(value);
@@ -139,30 +203,7 @@ const formatDateTime = (value?: string | null) => {
   });
 };
 
-const getStatusClass = (status?: string | null) =>
-  STATUS_STYLES[status ?? ""] ??
-  "bg-gray-50 text-gray-600 border-gray-100";
-
-const getProgress = (item: GroupTargetSavings) => {
-  const target = Number(item.targetAmount);
-  const balance = Number(item.balance);
-
-  if (!Number.isFinite(target) || target <= 0) return 0;
-  if (!Number.isFinite(balance) || balance <= 0) return 0;
-
-  return Math.min(100, Math.max(0, (balance / target) * 100));
-};
-
-const getRemainingAmount = (item: GroupTargetSavings) => {
-  const target = Number(item.targetAmount);
-  const balance = Number(item.balance);
-
-  if (!Number.isFinite(target) || !Number.isFinite(balance)) return 0;
-
-  return Math.max(0, target - balance);
-};
-
-const getFullName = (user?: GroupTargetSavings["user"]) => {
+const getFullName = (user?: SavingsUser | null) => {
   if (!user) return "Unknown user";
 
   const name = [user.first_name, user.last_name]
@@ -173,10 +214,10 @@ const getFullName = (user?: GroupTargetSavings["user"]) => {
   return name || "Unknown user";
 };
 
-const getInitials = (user?: GroupTargetSavings["user"]) => {
+const getInitials = (user?: SavingsUser | null) => {
   const name = getFullName(user);
 
-  if (name === "Unknown user") return "G";
+  if (name === "Unknown user") return "U";
 
   return name
     .split(/\s+/)
@@ -184,6 +225,52 @@ const getInitials = (user?: GroupTargetSavings["user"]) => {
     .map((part) => part.charAt(0).toUpperCase())
     .join("");
 };
+
+const getStatusClass = (status?: string | null) =>
+  STATUS_STYLES[status ?? ""] ??
+  "bg-gray-50 text-gray-600 border-gray-100";
+
+const getProgress = (group: GroupTargetSavings) => {
+  const target = Number(group.targetAmount);
+  const balance = Number(group.balance);
+
+  if (!Number.isFinite(target) || target <= 0) return 0;
+  if (!Number.isFinite(balance) || balance <= 0) return 0;
+
+  return Math.min(100, Math.max(0, (balance / target) * 100));
+};
+
+const getRemainingAmount = (group: GroupTargetSavings) => {
+  const target = Number(group.targetAmount);
+  const balance = Number(group.balance);
+
+  if (!Number.isFinite(target) || !Number.isFinite(balance)) return 0;
+
+  return Math.max(0, target - balance);
+};
+
+const getErrorMessage = (error: unknown) => {
+  if (typeof error === "object" && error !== null && "data" in error) {
+    const data = (error as { data?: { message?: unknown } }).data;
+
+    if (data?.message) {
+      return Array.isArray(data.message)
+        ? data.message.join(", ")
+        : String(data.message);
+    }
+  }
+
+  if (typeof error === "object" && error !== null && "error" in error) {
+    const message = (error as { error?: string }).error;
+    if (message) return message;
+  }
+
+  return "Something went wrong while fetching group target savings.";
+};
+
+/* ================================================================
+   SMALL UI COMPONENTS
+================================================================ */
 
 function StatusBadge({ status }: { status?: string | null }) {
   return (
@@ -197,12 +284,236 @@ function StatusBadge({ status }: { status?: string | null }) {
   );
 }
 
+function SummaryCard({
+  label,
+  value,
+  description,
+  icon,
+  iconClass,
+}: {
+  label: string;
+  value: string;
+  description: string;
+  icon: React.ReactNode;
+  iconClass: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-white/70 bg-white/50 p-5 shadow-sm backdrop-blur-md">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-medium text-gray-500">{label}</p>
+        <span className={`rounded-xl p-2.5 ${iconClass}`}>{icon}</span>
+      </div>
+
+      <p className="mt-4 break-words text-2xl font-bold text-[#181B25]">
+        {value}
+      </p>
+
+      <p className="mt-1 text-xs text-gray-400">{description}</p>
+    </div>
+  );
+}
+
+function DetailItem({
+  label,
+  value,
+  highlight = false,
+}: {
+  label: string;
+  value: string;
+  highlight?: boolean;
+}) {
+  return (
+    <div className="min-w-0">
+      <span className="mb-0.5 block text-[11px] font-medium text-gray-400">
+        {label}
+      </span>
+
+      <span
+        className={`break-words text-sm ${
+          highlight
+            ? "font-bold text-gray-950"
+            : "font-semibold text-gray-800"
+        }`}
+      >
+        {value || "N/A"}
+      </span>
+    </div>
+  );
+}
+
+function DetailRow({
+  label,
+  value,
+  breakAll = false,
+}: {
+  label: string;
+  value?: string | null;
+  breakAll?: boolean;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4 border-b border-gray-100/50 py-3 last:border-b-0">
+      <span className="shrink-0 text-xs font-medium text-gray-500 sm:text-sm">
+        {label}
+      </span>
+
+      <span
+        className={`min-w-0 text-right text-xs font-semibold text-gray-800 sm:text-sm ${
+          breakAll ? "break-all" : "break-words"
+        }`}
+      >
+        {value || "N/A"}
+      </span>
+    </div>
+  );
+}
+
+function DetailSection({
+  icon,
+  title,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="space-y-4 rounded-2xl border border-gray-100/60 bg-white/50 p-5 shadow-sm backdrop-blur-sm">
+      <div className="flex items-center gap-2 border-b border-gray-100/50 pb-2.5">
+        <div className="rounded-lg bg-[#68123D]/5 p-1.5 text-[#68123D]">
+          {icon}
+        </div>
+
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+          {title}
+        </h3>
+      </div>
+
+      {children}
+    </section>
+  );
+}
+
+function LoadingState({ text }: { text: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center rounded-2xl border border-white/60 bg-white/45 px-4 py-16 shadow-sm backdrop-blur-md">
+      <div className="mb-4 h-8 w-8 animate-spin rounded-full border-2 border-neutral-200 border-t-[#68123D]" />
+      <p className="text-sm font-medium text-gray-500">{text}</p>
+    </div>
+  );
+}
+
+function ErrorState({
+  title,
+  description,
+  onRetry,
+}: {
+  title: string;
+  description: string;
+  onRetry: () => void;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center rounded-2xl border border-red-100/70 bg-red-50/30 px-4 py-12 text-center shadow-sm">
+      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-500">
+        <HiOutlineX size={22} />
+      </div>
+
+      <h3 className="mb-1 text-sm font-semibold text-red-900">{title}</h3>
+
+      <p className="mb-5 max-w-md text-xs leading-5 text-red-700/80">
+        {description}
+      </p>
+
+      <button
+        type="button"
+        onClick={onRetry}
+        className="inline-flex items-center gap-2 rounded-xl bg-[#68123D] px-5 py-2.5 text-xs font-semibold text-white transition hover:bg-[#68123D]/90"
+      >
+        <HiOutlineRefresh size={14} />
+        Retry Connection
+      </button>
+    </div>
+  );
+}
+
+function EmptyState({ text }: { text: string }) {
+  return (
+    <div className="rounded-2xl border border-gray-100 bg-gray-50/50 px-4 py-12 text-center">
+      <HiOutlineExclamationCircle
+        size={24}
+        className="mx-auto mb-2 text-gray-300"
+      />
+      <p className="text-xs leading-5 text-gray-400">{text}</p>
+    </div>
+  );
+}
+
+function Pagination({
+  meta,
+  itemCount,
+  onPrevious,
+  onNext,
+}: {
+  meta: PaginationMeta;
+  itemCount: number;
+  onPrevious: () => void;
+  onNext: () => void;
+}) {
+  const start = meta.total === 0 ? 0 : (meta.page - 1) * meta.limit + 1;
+  const end = Math.min((meta.page - 1) * meta.limit + itemCount, meta.total);
+  const totalPages = Math.max(meta.totalPages, 1);
+
+  return (
+    <div className="flex flex-col justify-between gap-3 border-t border-gray-100/50 bg-white/20 px-4 py-4 text-xs font-medium text-gray-500 sm:flex-row sm:items-center sm:px-6">
+      <span>
+        Showing <strong className="text-gray-700">{start}</strong> to{" "}
+        <strong className="text-gray-700">{end}</strong> of{" "}
+        <strong className="text-gray-700">{meta.total}</strong> records
+      </span>
+
+      <div className="flex items-center justify-between gap-2 sm:justify-end">
+        <span className="mr-2 whitespace-nowrap">
+          Page {meta.page} of {totalPages}
+        </span>
+
+        <button
+          type="button"
+          onClick={onPrevious}
+          disabled={meta.page <= 1}
+          aria-label="Previous page"
+          className="rounded-xl border border-gray-200/50 bg-white/50 p-2 text-gray-600 shadow-sm transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          <HiOutlineChevronLeft size={16} />
+        </button>
+
+        <button
+          type="button"
+          onClick={onNext}
+          disabled={meta.page >= meta.totalPages || meta.totalPages === 0}
+          aria-label="Next page"
+          className="rounded-xl border border-gray-200/50 bg-white/50 p-2 text-gray-600 shadow-sm transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          <HiOutlineChevronRight size={16} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ================================================================
+   MAIN PAGE
+================================================================ */
+
 export default function GroupTargetSavingsView() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+
+  /* ---------------------------------------------------------------
+     GROUP TARGET SAVINGS LIST
+     Uses /admin-dashboard/group-target-savings
+  ---------------------------------------------------------------- */
 
   const {
     data,
@@ -211,25 +522,45 @@ export default function GroupTargetSavingsView() {
     isError,
     error,
     refetch,
-  } = useGetTargetSavingsQuery({
+  } = useGetGroupTargetSavingsQuery({
     page,
     limit,
     status: statusFilter === "ALL" ? undefined : statusFilter,
   });
 
-  /*
-   * IMPORTANT:
-   * This currently uses the target savings list hook you provided.
-   * Replace it with your group target savings endpoint once available.
-   */
-  const groups = (data?.data ?? []) as GroupTargetSavings[];
+  /* ---------------------------------------------------------------
+     GROUP TARGET SAVINGS DETAILS
+     Uses /admin-dashboard/group-target-savings/:id
+  ---------------------------------------------------------------- */
 
-  const meta = data?.meta ?? {
+  const {
+    data: detailsResponse,
+    isLoading: isDetailsLoading,
+    isFetching: isDetailsFetching,
+    isError: isDetailsError,
+    error: detailsError,
+    refetch: refetchDetails,
+  } = useGetGroupTargetSavingsDetailsQuery(selectedGroupId ?? "", {
+    skip: !selectedGroupId,
+  });
+
+  const groups = (data?.data ?? []) as GroupTargetSavings[];
+  console.log("groups", groups);
+
+  const meta: PaginationMeta = data?.meta ?? {
     page,
     limit,
     total: 0,
     totalPages: 0,
   };
+
+  const selectedGroup: any = detailsResponse?.data as
+    | GroupTargetSavings
+    | undefined;
+
+  /* ---------------------------------------------------------------
+     SEARCH
+  ---------------------------------------------------------------- */
 
   const filteredGroups = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -251,47 +582,58 @@ export default function GroupTargetSavingsView() {
       ];
 
       return values.some((value) =>
-        String(value ?? "").toLowerCase().includes(query),
+        String(value ?? "")
+          .toLowerCase()
+          .includes(query),
       );
     });
   }, [groups, searchQuery]);
 
-  const summary = useMemo(() => {
-    return groups.reduce(
-      (result, group) => {
-        result.total += 1;
+  /* ---------------------------------------------------------------
+     SUMMARY
+  ---------------------------------------------------------------- */
 
-        if (group.status === "ACTIVE") result.active += 1;
-        if (group.status === "COMPLETED") result.completed += 1;
-        if (group.status === "PAUSED") result.paused += 1;
-        if (group.status === "CANCELLED") result.cancelled += 1;
+  const summary = useMemo(
+    () =>
+      groups.reduce(
+        (result, group) => {
+          result.total += 1;
 
-        const balance = Number(group.balance);
-        const target = Number(group.targetAmount);
+          if (group.status === "ACTIVE") result.active += 1;
+          if (group.status === "COMPLETED") result.completed += 1;
+          if (group.status === "PAUSED") result.paused += 1;
+          if (group.status === "CANCELLED") result.cancelled += 1;
 
-        if (Number.isFinite(balance)) result.balance += balance;
-        if (Number.isFinite(target)) result.target += target;
+          const balance = Number(group.balance);
+          const target = Number(group.targetAmount);
 
-        return result;
-      },
-      {
-        total: 0,
-        active: 0,
-        completed: 0,
-        paused: 0,
-        cancelled: 0,
-        balance: 0,
-        target: 0,
-      },
-    );
-  }, [groups]);
+          if (Number.isFinite(balance)) result.balance += balance;
+          if (Number.isFinite(target)) result.target += target;
+
+          return result;
+        },
+        {
+          total: 0,
+          active: 0,
+          completed: 0,
+          paused: 0,
+          cancelled: 0,
+          balance: 0,
+          target: 0,
+        },
+      ),
+    [groups],
+  );
 
   const overallProgress =
     summary.target > 0
       ? Math.min(100, Math.max(0, (summary.balance / summary.target) * 100))
       : 0;
 
-  const selectedGroup: any = groups.find((group) => group.id === selectedGroupId);
+  // const selectedGroup: any = groups.find((group) => group.id === selectedGroupId);
+  /* ---------------------------------------------------------------
+     HANDLERS
+  ---------------------------------------------------------------- */
 
   const handleSearch = (value: string) => {
     setSearchQuery(value);
@@ -303,31 +645,25 @@ export default function GroupTargetSavingsView() {
     setPage(1);
   };
 
-  const hasPreviousPage = page > 1;
-  const hasNextPage = page < meta.totalPages;
-
   const previousPage = () => {
     setPage((current) => Math.max(1, current - 1));
   };
 
   const nextPage = () => {
-    setPage((current) =>
-      Math.min(Math.max(meta.totalPages, 1), current + 1),
-    );
+    setPage((current) => Math.min(Math.max(meta.totalPages, 1), current + 1));
   };
 
-  const errorMessage =
-    typeof error === "object" &&
-    error !== null &&
-    "data" in error &&
-    (error as { data?: { message?: string } }).data?.message
-      ? String(
-          (error as { data?: { message?: string } }).data?.message,
-        )
-      : "Something went wrong while fetching group target savings.";
+  const closeDetails = () => setSelectedGroupId(null);
+
+  const errorMessage = getErrorMessage(error);
+  const detailsErrorMessage = getErrorMessage(detailsError);
+
+  /* ---------------------------------------------------------------
+     RENDER
+  ---------------------------------------------------------------- */
 
   return (
-    <div className="relative space-y-6 font-satoshi">
+    <div className="relative min-w-0 w-full max-w-full space-y-6 overflow-x-clip font-satoshi">
       <style>{`
         @keyframes slideIn {
           from { transform: translateX(100%); opacity: 0.9; }
@@ -366,7 +702,7 @@ export default function GroupTargetSavingsView() {
           type="button"
           onClick={() => refetch()}
           disabled={isFetching}
-          className="inline-flex min-h-10 items-center justify-center gap-2 self-start rounded-xl border border-gray-200 bg-white/60 px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-white disabled:opacity-60 sm:self-auto"
+          className="inline-flex min-h-10 items-center justify-center gap-2 self-start rounded-xl border border-gray-200 bg-white/60 px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60 sm:self-auto"
         >
           <HiOutlineRefresh
             size={16}
@@ -378,11 +714,11 @@ export default function GroupTargetSavingsView() {
 
       {/* SUMMARY CARDS */}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <SummaryCard
           label="Total Groups"
           value={summary.total.toLocaleString("en-NG")}
-          description="Groups on this page"
+          description="Matching groups across all pages"
           icon={<HiOutlineUsers size={19} />}
           iconClass="bg-[#68123D]/10 text-[#68123D]"
         />
@@ -390,7 +726,7 @@ export default function GroupTargetSavingsView() {
         <SummaryCard
           label="Active Groups"
           value={summary.active.toLocaleString("en-NG")}
-          description="Currently in progress"
+          description="Active groups"
           icon={<HiOutlineRefresh size={19} />}
           iconClass="bg-emerald-50 text-emerald-600"
         />
@@ -398,7 +734,7 @@ export default function GroupTargetSavingsView() {
         <SummaryCard
           label="Completed Groups"
           value={summary.completed.toLocaleString("en-NG")}
-          description="Savings goals reached"
+          description="Completed groups"
           icon={<HiOutlineCheckCircle size={19} />}
           iconClass="bg-blue-50 text-blue-600"
         />
@@ -406,13 +742,13 @@ export default function GroupTargetSavingsView() {
         <SummaryCard
           label="Total Saved"
           value={formatMoney(summary.balance)}
-          description="Current page balance"
+          description="Saved balance"
           icon={<HiOutlineCurrencyDollar size={19} />}
           iconClass="bg-amber-50 text-amber-600"
         />
       </div>
 
-      {/* PROGRESS OVERVIEW */}
+      {/* SAVINGS PROGRESS */}
 
       <div className="rounded-2xl border border-white/70 bg-white/50 p-5 shadow-sm backdrop-blur-lg sm:p-6">
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
@@ -443,10 +779,10 @@ export default function GroupTargetSavingsView() {
         </div>
       </div>
 
-      {/* SEARCH AND FILTER TOOLBAR */}
+      {/* SEARCH AND FILTERS */}
 
-      <div className="flex flex-col items-center justify-between gap-4 rounded-2xl border border-white/60 bg-white/45 p-4 shadow-sm backdrop-blur-md sm:flex-row">
-        <div className="relative w-full sm:max-w-md sm:flex-1">
+      <div className="flex min-w-0 flex-col items-stretch justify-between gap-4 rounded-2xl border border-white/60 bg-white/45 p-3 shadow-sm backdrop-blur-md sm:flex-row sm:items-center sm:p-4">
+        <div className="relative w-full min-w-0 sm:max-w-md sm:flex-1">
           <HiOutlineSearch
             size={18}
             className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
@@ -461,7 +797,7 @@ export default function GroupTargetSavingsView() {
           />
         </div>
 
-        <div className="flex w-full flex-wrap items-center justify-between gap-3 sm:w-auto sm:justify-end">
+        <div className="flex w-full min-w-0 flex-wrap items-center justify-between gap-3 sm:w-auto sm:justify-end">
           <select
             value={statusFilter}
             onChange={(event) => handleStatus(event.target.value)}
@@ -521,7 +857,7 @@ export default function GroupTargetSavingsView() {
         </div>
       )}
 
-      {/* ERROR */}
+      {/* LIST ERROR */}
 
       {isError && (
         <ErrorState
@@ -533,14 +869,14 @@ export default function GroupTargetSavingsView() {
 
       {/* DESKTOP TABLE */}
 
-      <div className="hidden overflow-hidden rounded-2xl border border-white/70 bg-white/50 shadow-sm backdrop-blur-lg lg:block">
+      <div className="hidden min-w-0 max-w-full overflow-hidden rounded-2xl border border-white/70 bg-white/50 shadow-sm backdrop-blur-lg lg:block">
         <div className="flex items-center justify-between gap-3 border-b border-gray-100/50 px-6 py-4">
           <div>
             <h3 className="font-semibold text-[#181B25]">
               Group Savings Plans
             </h3>
             <p className="mt-1 text-xs text-gray-500">
-              Select a group to review its available details.
+              Select a group to review its details, members, and contributions.
             </p>
           </div>
 
@@ -555,16 +891,16 @@ export default function GroupTargetSavingsView() {
           <EmptyState text="No groups match your current search or filters." />
         ) : !isError ? (
           <>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[1100px] border-collapse text-left">
+            <div className="w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain">
+              <table className="w-full min-w-[1150px] border-collapse text-left">
                 <thead>
                   <tr className="border-b border-gray-100/50 bg-gray-50/30 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
                     <th className="px-5 py-4">Group</th>
                     <th className="px-5 py-4">Group Owner</th>
                     <th className="px-5 py-4">Target Amount</th>
                     <th className="px-5 py-4">Balance / Progress</th>
-                    <th className="px-5 py-4">Contribution</th>
-                    <th className="px-5 py-4">Frequency</th>
+                    {/* <th className="px-5 py-4">Contribution</th> */}
+                    {/* <th className="px-5 py-4">Frequency</th> */}
                     <th className="px-5 py-4">Target Date</th>
                     <th className="px-5 py-4">Status</th>
                     <th className="px-5 py-4 text-right">Actions</th>
@@ -572,13 +908,13 @@ export default function GroupTargetSavingsView() {
                 </thead>
 
                 <tbody className="divide-y divide-gray-100/30 text-sm">
-                  {filteredGroups.map((group) => {
+                  {filteredGroups.map((group: any) => {
                     const progress = getProgress(group);
 
                     return (
                       <tr
                         key={group.id}
-                        className="group transition-colors hover:bg-white/45"
+                        className="transition-colors hover:bg-white/45"
                       >
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-3">
@@ -640,25 +976,25 @@ export default function GroupTargetSavingsView() {
                           </p>
                         </td>
 
-                        <td className="whitespace-nowrap px-5 py-4">
+                        {/* <td className="whitespace-nowrap px-5 py-4">
                           <span className="text-xs font-medium text-gray-700">
                             {formatMoney(
                               group.contributionAmount,
                               group.currency,
                             )}
                           </span>
-                        </td>
+                        </td> */}
 
-                        <td className="px-5 py-4">
+                        {/* <td className="px-5 py-4">
                           <span className="text-xs font-medium text-gray-700">
                             {formatFrequency(group.frequency)}
                           </span>
-                        </td>
+                        </td> */}
 
                         <td className="px-5 py-4">
-                          <p className="whitespace-nowrap text-xs font-medium text-gray-700">
-                            {formatDate(group.targetDate)}
-                          </p>
+                          <span className="whitespace-nowrap text-xs font-medium text-gray-700">
+                            {formatDate(group?.completedAt)}
+                          </span>
                         </td>
 
                         <td className="px-5 py-4">
@@ -683,10 +1019,7 @@ export default function GroupTargetSavingsView() {
             </div>
 
             <Pagination
-              page={page}
-              limit={limit}
-              total={meta.total}
-              totalPages={meta.totalPages}
+              meta={meta}
               itemCount={filteredGroups.length}
               onPrevious={previousPage}
               onNext={nextPage}
@@ -695,12 +1028,14 @@ export default function GroupTargetSavingsView() {
         ) : null}
       </div>
 
-      {/* MOBILE CARDS */}
+      {/* MOBILE AND TABLET CARDS */}
 
-      <div className="space-y-4 lg:hidden">
+      <div className="min-w-0 space-y-4 lg:hidden">
         <div className="flex items-center justify-between gap-3 px-1">
           <div>
-            <h3 className="font-semibold text-[#181B25]">Group Savings Plans</h3>
+            <h3 className="font-semibold text-[#181B25]">
+              Group Savings Plans
+            </h3>
             <p className="mt-1 text-xs text-gray-500">
               {meta.total.toLocaleString("en-NG")} total records
             </p>
@@ -724,7 +1059,7 @@ export default function GroupTargetSavingsView() {
                 return (
                   <article
                     key={group.id}
-                    className="space-y-4 rounded-2xl border border-white/70 bg-white/60 p-5 shadow-sm backdrop-blur-md"
+                    className="space-y-4 min-w-0 max-w-full rounded-2xl border border-white/70 bg-white/60 p-5 shadow-sm backdrop-blur-md"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex min-w-0 items-center gap-3">
@@ -778,22 +1113,17 @@ export default function GroupTargetSavingsView() {
                           group.currency,
                         )}
                       />
-                      <DetailItem
+                      {/* <DetailItem
                         label="Frequency"
                         value={formatFrequency(group.frequency)}
-                      />
+                      /> */}
                       <DetailItem
                         label="Target Date"
-                        value={formatDate(group.targetDate)}
+                        value={formatDate(group.completedAt)}
                       />
                       <DetailItem
                         label="Members"
-                        value={
-                          group.groupSize !== undefined &&
-                          group.groupSize !== null
-                            ? String(group.groupSize)
-                            : "N/A"
-                        }
+                        value={String(group._count?.members ?? group.groupSize ?? 0)}
                       />
                     </div>
 
@@ -815,10 +1145,7 @@ export default function GroupTargetSavingsView() {
                       </div>
 
                       <p className="mt-2 text-xs text-gray-500">
-                        {formatMoney(
-                          getRemainingAmount(group),
-                          group.currency,
-                        )}{" "}
+                        {formatMoney(getRemainingAmount(group), group.currency)}{" "}
                         remaining to reach target
                       </p>
                     </div>
@@ -838,10 +1165,7 @@ export default function GroupTargetSavingsView() {
 
             <div className="overflow-hidden rounded-2xl border border-white/70 bg-white/50 shadow-sm">
               <Pagination
-                page={page}
-                limit={limit}
-                total={meta.total}
-                totalPages={meta.totalPages}
+                meta={meta}
                 itemCount={filteredGroups.length}
                 onPrevious={previousPage}
                 onNext={nextPage}
@@ -851,21 +1175,23 @@ export default function GroupTargetSavingsView() {
         ) : null}
       </div>
 
-      {/* DETAILS DRAWER */}
+      {/* GROUP DETAILS DRAWER */}
 
       {selectedGroupId && (
         <>
           <div
             className="fixed inset-0 z-40 bg-black/15 backdrop-blur-md"
-            onClick={() => setSelectedGroupId(null)}
+            onClick={closeDetails}
           />
 
           <aside
             role="dialog"
             aria-modal="true"
-            aria-label="Group target savings details"
-            className="drawer-animate fixed bottom-4 right-4 top-4 z-50 flex w-[calc(100%-2rem)] flex-col overflow-hidden rounded-3xl border border-white/50 bg-white/95 text-sm text-[#181B25] shadow-[0_24px_60px_rgba(0,0,0,0.12)] backdrop-blur-2xl md:w-full md:max-w-2xl"
+            aria-label="Individual target savings details"
+            className="drawer-animate fixed inset-y-2 left-2 right-2 z-50 flex min-w-0 flex-col overflow-hidden rounded-2xl border border-white/50 bg-white/95 text-sm text-[#181B25] shadow-[0_24px_60px_rgba(0,0,0,0.12)] backdrop-blur-2xl sm:inset-y-4 sm:left-4 sm:right-4 sm:rounded-3xl md:left-auto md:right-4 md:w-full md:max-w-2xl"
           >
+            {/* DRAWER HEADER */}
+
             <div className="flex items-center justify-between gap-3 border-b border-gray-100/50 p-5 sm:p-6">
               <div className="flex min-w-0 items-center gap-3">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#68123D]/10 text-[#68123D]">
@@ -884,7 +1210,7 @@ export default function GroupTargetSavingsView() {
 
               <button
                 type="button"
-                onClick={() => setSelectedGroupId(null)}
+                onClick={closeDetails}
                 aria-label="Close group details"
                 className="shrink-0 rounded-full bg-gray-100/60 p-2.5 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900"
               >
@@ -892,11 +1218,23 @@ export default function GroupTargetSavingsView() {
               </button>
             </div>
 
+            {/* DRAWER CONTENT */}
+
             <div className="flex-1 space-y-6 overflow-y-auto p-4 sm:p-6">
-              {!selectedGroup ? (
-                <EmptyState text="The selected group is not on the current page. Close the drawer and locate the group again." />
+              {isDetailsLoading || isDetailsFetching ? (
+                <LoadingState text="Loading group details..." />
+              ) : isDetailsError ? (
+                <ErrorState
+                  title="Failed to load group details"
+                  description={detailsErrorMessage}
+                  onRetry={() => refetchDetails()}
+                />
+              ) : !selectedGroup ? (
+                <EmptyState text="No details are available for this group." />
               ) : (
                 <>
+                  {/* GROUP OVERVIEW */}
+
                   <div className="rounded-2xl border border-[#68123D]/10 bg-[#68123D]/5 p-5">
                     <div className="flex items-start gap-4">
                       <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#68123D]/10 text-[#68123D]">
@@ -912,7 +1250,8 @@ export default function GroupTargetSavingsView() {
                         </div>
 
                         <p className="mt-2 text-xs leading-relaxed text-gray-500">
-                          Group target savings overview.
+                          {selectedGroup.description ||
+                            "Group target savings overview."}
                         </p>
                       </div>
                     </div>
@@ -948,6 +1287,19 @@ export default function GroupTargetSavingsView() {
                           selectedGroup.currency,
                         )}
                       />
+                      {/* <DetailItem
+                        label="Frequency"
+                        value={formatFrequency(selectedGroup.frequency)}
+                      /> */}
+                      <DetailItem
+                        label="Members"
+                        value={String(
+                          selectedGroup._count?.members ??
+                            selectedGroup.members?.length ??
+                            selectedGroup.groupSize ??
+                            0,
+                        )}
+                      />
                     </div>
 
                     <div className="mt-5 border-t border-[#68123D]/10 pt-4">
@@ -962,7 +1314,7 @@ export default function GroupTargetSavingsView() {
 
                       <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/80">
                         <div
-                          className="h-full rounded-full bg-[#68123D]"
+                          className="h-full rounded-full bg-[#68123D] transition-all duration-500"
                           style={{
                             width: `${getProgress(selectedGroup)}%`,
                           }}
@@ -970,6 +1322,8 @@ export default function GroupTargetSavingsView() {
                       </div>
                     </div>
                   </div>
+
+                  {/* GROUP OWNER */}
 
                   <DetailSection
                     icon={<HiOutlineUser size={16} />}
@@ -998,59 +1352,11 @@ export default function GroupTargetSavingsView() {
                         label="Owner User ID"
                         value={selectedGroup.userId || "N/A"}
                       />
-                      <DetailItem
-                        label="Group ID"
-                        value={selectedGroup.id}
-                      />
+                      <DetailItem label="Group ID" value={selectedGroup.id} />
                     </div>
                   </DetailSection>
 
-                  <DetailSection
-                    icon={<HiOutlineCurrencyDollar size={16} />}
-                    title="Savings Goal"
-                  >
-                    <div className="grid grid-cols-2 gap-4">
-                      <DetailItem
-                        label="Target Amount"
-                        value={formatMoney(
-                          selectedGroup.targetAmount,
-                          selectedGroup.currency,
-                        )}
-                        highlight
-                      />
-                      <DetailItem
-                        label="Current Balance"
-                        value={formatMoney(
-                          selectedGroup.balance,
-                          selectedGroup.currency,
-                        )}
-                      />
-                      <DetailItem
-                        label="Contribution Amount"
-                        value={formatMoney(
-                          selectedGroup.contributionAmount,
-                          selectedGroup.currency,
-                        )}
-                      />
-                      <DetailItem
-                        label="Frequency"
-                        value={formatFrequency(selectedGroup.frequency)}
-                      />
-                      <DetailItem
-                        label="Group Size"
-                        value={
-                          selectedGroup.groupSize !== undefined &&
-                          selectedGroup.groupSize !== null
-                            ? String(selectedGroup.groupSize)
-                            : "N/A"
-                        }
-                      />
-                      <DetailItem
-                        label="Currency"
-                        value={selectedGroup.currency || "NGN"}
-                      />
-                    </div>
-                  </DetailSection>
+                  {/* GROUP TIMELINE */}
 
                   <DetailSection
                     icon={<HiOutlineCalendar size={16} />}
@@ -1066,22 +1372,211 @@ export default function GroupTargetSavingsView() {
                     />
                     <DetailRow
                       label="Target Date"
-                      value={formatDate(selectedGroup.targetDate)}
+                      value={formatDate(selectedGroup.completedAt)}
                     />
                     <DetailRow
-                      label="Group Status"
-                      value={formatStatus(selectedGroup.status)}
+                      label="Currency"
+                      value={selectedGroup.currency || "NGN"}
                     />
                   </DetailSection>
 
+                  {/* MEMBERS */}
+
                   <DetailSection
-                    icon={<HiOutlineShieldCheck size={16} />}
+                    icon={<HiOutlineUsers size={16} />}
+                    title={`Members (${selectedGroup.members?.length ?? 0})`}
+                  >
+                    {!selectedGroup.members?.length ? (
+                      <EmptyState text="No group members were returned for this group." />
+                    ) : (
+                      <div className="space-y-3">
+                        {selectedGroup.members.map((member: any) => (
+                          <div
+                            key={member.id}
+                            className="rounded-xl border border-gray-100 bg-white/70 p-4"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex min-w-0 items-center gap-3">
+                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#68123D]/10 text-xs font-bold text-[#68123D]">
+                                  {getInitials(member.user)}
+                                </div>
+
+                                <div className="min-w-0">
+                                  <p className="break-words text-sm font-semibold text-gray-800">
+                                    {getFullName(member.user)}
+                                  </p>
+                                  <p className="mt-1 break-all text-xs text-gray-500">
+                                    {member.user?.email || "No email"}
+                                  </p>
+                                  <p className="mt-1 text-xs text-gray-500">
+                                    {member.user?.phone || "No phone"}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <StatusBadge status={member.status} />
+                            </div>
+
+                            <div className="mt-3 grid grid-cols-2 gap-3 border-t border-gray-100 pt-3">
+                              <DetailItem
+                                label="Member ID"
+                                value={member.id}
+                              />
+                              <DetailItem
+                                label="Joined"
+                                value={formatDate(member.createdAt)}
+                              />
+                              <DetailItem
+                                label="Contributions"
+                                value={String(member.contributions?.length ?? 0)}
+                              />
+                            </div>
+
+                            {!!member.contributions?.length && (
+                              <div className="mt-4 space-y-2">
+                                <p className="text-xs font-semibold text-gray-600">
+                                  Member Contributions
+                                </p>
+
+                                {member.contributions.map((contribution: any) => (
+                                  <div
+                                    key={contribution.id}
+                                    className="flex items-start justify-between gap-3 rounded-lg bg-gray-50 p-3"
+                                  >
+                                    <div className="min-w-0">
+                                      <p className="text-xs font-semibold text-gray-800">
+                                        {formatMoney(
+                                          contribution.amount,
+                                          selectedGroup.currency,
+                                        )}
+                                      </p>
+                                      <p className="mt-1 text-[10px] text-gray-500">
+                                        {formatDateTime(contribution.createdAt)}
+                                      </p>
+                                    </div>
+                                    <StatusBadge status={contribution.status} />
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </DetailSection>
+
+                  {/* GROUP CONTRIBUTIONS */}
+
+                  <DetailSection
+                    icon={<HiOutlineCurrencyDollar size={16} />}
+                    title={`Group Contributions (${
+                      selectedGroup.groupMemberContributions?.length ?? 0
+                    })`}
+                  >
+                    {!selectedGroup.groupMemberContributions?.length ? (
+                      <EmptyState text="No group contributions were returned for this group." />
+                    ) : (
+                      <div className="space-y-3">
+                        {selectedGroup.groupMemberContributions.map(
+                          (contribution: any) => {
+                            const contributor =
+                              contribution.user ??
+                              contribution.groupTargetSavingsMember?.user;
+
+                            return (
+                              <div
+                                key={contribution.id}
+                                className="rounded-xl border border-gray-100 bg-white/70 p-4"
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="min-w-0">
+                                    <p className="text-sm font-bold text-gray-900">
+                                      {formatMoney(
+                                        contribution.amount,
+                                        selectedGroup.currency,
+                                      )}
+                                    </p>
+                                    <p className="mt-1 break-words text-xs text-gray-600">
+                                      {getFullName(contributor)}
+                                    </p>
+                                    <p className="mt-1 text-xs text-gray-500">
+                                      {formatDateTime(contribution.createdAt)}
+                                    </p>
+                                  </div>
+
+                                  <StatusBadge status={contribution.status} />
+                                </div>
+
+                                <p className="mt-3 break-all border-t border-gray-100 pt-3 font-mono text-[10px] text-gray-400">
+                                  Contribution ID: {contribution.id}
+                                </p>
+                              </div>
+                            );
+                          },
+                        )}
+                      </div>
+                    )}
+                  </DetailSection>
+
+                  {/* APPLICATIONS */}
+
+                  <DetailSection
+                    icon={<HiOutlineClock size={16} />}
+                    title={`Applications (${
+                      selectedGroup.groupMemberApplications?.length ?? 0
+                    })`}
+                  >
+                    {!selectedGroup.groupMemberApplications?.length ? (
+                      <EmptyState text="No group membership applications were returned for this group." />
+                    ) : (
+                      <div className="space-y-3">
+                        {selectedGroup.groupMemberApplications.map(
+                          (application: any) => (
+                            <div
+                              key={application.id}
+                              className="rounded-xl border border-gray-100 bg-white/70 p-4"
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                  <p className="break-words text-sm font-semibold text-gray-800">
+                                    {getFullName(application.user)}
+                                  </p>
+                                  <p className="mt-1 break-all text-xs text-gray-500">
+                                    {application.user?.email || "No email"}
+                                  </p>
+                                  <p className="mt-1 text-xs text-gray-500">
+                                    Applied: {formatDateTime(application.createdAt)}
+                                  </p>
+                                </div>
+
+                                <StatusBadge status={application.status} />
+                              </div>
+
+                              <p className="mt-3 break-all border-t border-gray-100 pt-3 font-mono text-[10px] text-gray-400">
+                                Application ID: {application.id}
+                              </p>
+                            </div>
+                          ),
+                        )}
+                      </div>
+                    )}
+                  </DetailSection>
+
+                  {/* RECORD INFORMATION */}
+
+                  <DetailSection
+                    icon={<HiOutlineInformationCircle size={16} />}
                     title="Record Information"
                   >
-                    <DetailRow label="Group ID" value={selectedGroup.id} />
+                    <DetailRow
+                      label="Group ID"
+                      value={selectedGroup.id}
+                      breakAll
+                    />
                     <DetailRow
                       label="Owner User ID"
                       value={selectedGroup.userId}
+                      breakAll
                     />
                     <DetailRow
                       label="Created At"
@@ -1091,239 +1586,50 @@ export default function GroupTargetSavingsView() {
                       label="Updated At"
                       value={formatDateTime(selectedGroup.updatedAt)}
                     />
+                    <DetailRow
+                      label="Member Count"
+                      value={String(
+                        selectedGroup._count?.members ??
+                          selectedGroup.members?.length ??
+                          0,
+                      )}
+                    />
+                    <DetailRow
+                      label="Contribution Count"
+                      value={String(
+                        selectedGroup._count?.groupMemberContributions ??
+                          selectedGroup.groupMemberContributions?.length ??
+                          0,
+                      )}
+                    />
+                    <DetailRow
+                      label="Application Count"
+                      value={String(
+                        selectedGroup._count?.groupMemberApplications ??
+                          selectedGroup.groupMemberApplications?.length ??
+                          0,
+                      )}
+                    />
                   </DetailSection>
                 </>
               )}
             </div>
 
+            {/* DRAWER FOOTER */}
+
             <div className="border-t border-gray-100/50 bg-white/30 p-4 backdrop-blur-md sm:p-6">
               <button
                 type="button"
-                onClick={() => setSelectedGroupId(null)}
-                className="w-full rounded-2xl bg-neutral-900 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-neutral-800"
+                onClick={closeDetails}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-neutral-900 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-neutral-800"
               >
+                <HiOutlineX size={16} />
                 Close Details
               </button>
             </div>
           </aside>
         </>
       )}
-    </div>
-  );
-}
-
-/* ================================================================
-   REUSABLE COMPONENTS
-================================================================ */
-
-function SummaryCard({
-  label,
-  value,
-  description,
-  icon,
-  iconClass,
-}: {
-  label: string;
-  value: string;
-  description: string;
-  icon: React.ReactNode;
-  iconClass: string;
-}) {
-  return (
-    <div className="rounded-2xl border border-white/70 bg-white/50 p-5 shadow-sm backdrop-blur-md">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-medium text-gray-500">{label}</p>
-        <span className={`rounded-xl p-2.5 ${iconClass}`}>{icon}</span>
-      </div>
-
-      <p className="mt-4 break-words text-2xl font-bold text-[#181B25]">
-        {value}
-      </p>
-
-      <p className="mt-1 text-xs text-gray-400">{description}</p>
-    </div>
-  );
-}
-
-function DetailSection({
-  icon,
-  title,
-  children,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="space-y-4 rounded-2xl border border-gray-100/60 bg-white/50 p-5 shadow-sm backdrop-blur-sm">
-      <div className="flex items-center gap-2 border-b border-gray-100/50 pb-2.5">
-        <div className="rounded-lg bg-[#68123D]/5 p-1.5 text-[#68123D]">
-          {icon}
-        </div>
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-          {title}
-        </h3>
-      </div>
-
-      {children}
-    </section>
-  );
-}
-
-function DetailItem({
-  label,
-  value,
-  highlight = false,
-}: {
-  label: string;
-  value: string;
-  highlight?: boolean;
-}) {
-  return (
-    <div className="min-w-0">
-      <span className="mb-0.5 block text-[11px] font-medium text-gray-400">
-        {label}
-      </span>
-      <span
-        className={`break-words text-sm ${
-          highlight
-            ? "font-bold text-gray-950"
-            : "font-semibold text-gray-800"
-        }`}
-      >
-        {value || "N/A"}
-      </span>
-    </div>
-  );
-}
-
-function DetailRow({
-  label,
-  value,
-}: {
-  label: string;
-  value?: string | null;
-}) {
-  return (
-    <div className="flex items-start justify-between gap-4 border-b border-gray-100/50 py-3 last:border-b-0">
-      <span className="shrink-0 text-xs font-medium text-gray-500 sm:text-sm">
-        {label}
-      </span>
-      <span className="min-w-0 break-words text-right text-xs font-semibold text-gray-800 sm:text-sm">
-        {value || "N/A"}
-      </span>
-    </div>
-  );
-}
-
-function Pagination({
-  page,
-  limit,
-  total,
-  totalPages,
-  itemCount,
-  onPrevious,
-  onNext,
-}: {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-  itemCount: number;
-  onPrevious: () => void;
-  onNext: () => void;
-}) {
-  const start = total === 0 ? 0 : (page - 1) * limit + 1;
-  const end = Math.min((page - 1) * limit + itemCount, total);
-  const pages = Math.max(totalPages, 1);
-
-  return (
-    <div className="flex flex-col justify-between gap-3 border-t border-gray-100/50 bg-white/20 px-4 py-4 text-xs font-medium text-gray-500 sm:flex-row sm:items-center sm:px-6">
-      <span>
-        Showing <strong className="text-gray-700">{start}</strong> to{" "}
-        <strong className="text-gray-700">{end}</strong> of{" "}
-        <strong className="text-gray-700">{total}</strong> records
-      </span>
-
-      <div className="flex items-center justify-between gap-2 sm:justify-end">
-        <span className="mr-2 whitespace-nowrap">
-          Page {page} of {pages}
-        </span>
-
-        <button
-          type="button"
-          onClick={onPrevious}
-          disabled={page <= 1}
-          aria-label="Previous page"
-          className="rounded-xl border border-gray-200/50 bg-white/50 p-2 text-gray-600 shadow-sm transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-30"
-        >
-          <HiOutlineChevronLeft size={16} />
-        </button>
-
-        <button
-          type="button"
-          onClick={onNext}
-          disabled={page >= totalPages || totalPages === 0}
-          aria-label="Next page"
-          className="rounded-xl border border-gray-200/50 bg-white/50 p-2 text-gray-600 shadow-sm transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-30"
-        >
-          <HiOutlineChevronRight size={16} />
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function LoadingState({ text }: { text: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border border-white/60 bg-white/45 px-4 py-20 shadow-sm backdrop-blur-md">
-      <div className="mb-4 h-8 w-8 animate-spin rounded-full border-2 border-neutral-200 border-t-[#68123D]" />
-      <p className="text-sm font-medium text-gray-500">{text}</p>
-    </div>
-  );
-}
-
-function ErrorState({
-  title,
-  description,
-  onRetry,
-}: {
-  title: string;
-  description: string;
-  onRetry: () => void;
-}) {
-  return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border border-red-100/70 bg-red-50/30 px-4 py-16 text-center shadow-sm backdrop-blur-md">
-      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-500">
-        <HiOutlineX size={22} />
-      </div>
-
-      <h3 className="mb-1 text-sm font-semibold text-red-900">{title}</h3>
-
-      <p className="mb-5 max-w-md text-xs leading-5 text-red-700/80">
-        {description}
-      </p>
-
-      <button
-        type="button"
-        onClick={onRetry}
-        className="inline-flex items-center gap-2 rounded-xl bg-[#68123D] px-5 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[#68123D]/95"
-      >
-        <HiOutlineRefresh size={14} />
-        Retry Connection
-      </button>
-    </div>
-  );
-}
-
-function EmptyState({ text }: { text: string }) {
-  return (
-    <div className="rounded-2xl border border-gray-100 bg-gray-50/50 px-4 py-12 text-center">
-      <HiOutlineExclamationCircle
-        size={24}
-        className="mx-auto mb-2 text-gray-300"
-      />
-      <p className="text-xs leading-5 text-gray-400">{text}</p>
     </div>
   );
 }

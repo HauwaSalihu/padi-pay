@@ -578,6 +578,80 @@ export interface GetTargetSavingsDetailsResponse {
   data: TargetSavings;
 }
 
+export interface GroupTargetSavingsMember {
+  id: string;
+  userId?: string | null;
+  status?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  user?: TargetSavingsUser | null;
+  contributions?: GroupTargetSavingsContribution[];
+  [key: string]: unknown;
+}
+
+export interface GroupTargetSavingsContribution {
+  id: string;
+  amount: string | number;
+  status?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  user?: TargetSavingsUser | null;
+  groupTargetSavingsMember?: GroupTargetSavingsMember | null;
+  [key: string]: unknown;
+}
+
+export interface GroupTargetSavingsApplication {
+  id: string;
+  userId?: string;
+  status?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  user?: TargetSavingsUser | null;
+  [key: string]: unknown;
+}
+
+export interface GroupTargetSavings {
+  id: string;
+  name: string;
+  description?: string | null;
+  userId: string;
+  user?: TargetSavingsUser | null;
+
+  targetAmount: string | number;
+  balance: string | number;
+  contributionAmount: string | number;
+  currency: string;
+  targetDate?: string | null;
+  frequency: TargetSavingsFrequency;
+  status: TargetSavingsStatus;
+
+  createdAt: string;
+  updatedAt: string;
+
+  groupSize?: number | null;
+  members?: GroupTargetSavingsMember[];
+
+  groupMemberContributions?: GroupTargetSavingsContribution[];
+  groupMemberApplications?: GroupTargetSavingsApplication[];
+
+  _count?: {
+    members: number;
+    groupMemberContributions: number;
+    groupMemberApplications: number;
+  };
+
+  [key: string]: unknown;
+}
+
+export interface GetGroupTargetSavingsResponse {
+  data: GroupTargetSavings[];
+  meta: PaginationMeta;
+}
+
+export interface GetGroupTargetSavingsDetailsResponse {
+  data: GroupTargetSavings;
+}
+
 export interface SpendAndSave {
   id: string;
   userId: string;
@@ -798,6 +872,39 @@ export const adminApi = baseApi.injectEndpoints({
         },
       ],
     }),
+    
+    getGroupTargetSavings: builder.query<
+      GetGroupTargetSavingsResponse,
+      {
+        page: number;
+        limit: number;
+        status?: TargetSavingsStatus;
+      }
+    >({
+      query: ({ page, limit, status }) => ({
+        url: `/admin-dashboard/group-target-savings?page=${page}&limit=${limit}${
+          status ? `&status=${status}` : ""
+        }`,
+        method: "GET",
+      }),
+      providesTags: ["GroupTargetSavings"],
+    }),
+
+    getGroupTargetSavingsDetails: builder.query<
+      GetGroupTargetSavingsDetailsResponse,
+      string
+    >({
+      query: (id) => ({
+        url: `/admin-dashboard/group-target-savings/${id}`,
+        method: "GET",
+      }),
+      providesTags: (_result, _error, id) => [
+        {
+          type: "GroupTargetSavings",
+          id,
+        },
+      ],
+    }), 
 
     getSpendAndSave: builder.query<
       SpendAndSaveResponse,
@@ -832,6 +939,8 @@ export const {
   useGetFixedSavingsQuery,
   useGetTargetSavingsQuery,
   useGetTargetSavingsDetailsQuery,
+  useGetGroupTargetSavingsQuery,
+  useGetGroupTargetSavingsDetailsQuery,
   useGetSpendAndSaveQuery,
-  useGetUserSavingsQuery
+  useGetUserSavingsQuery,
 } = adminApi;
