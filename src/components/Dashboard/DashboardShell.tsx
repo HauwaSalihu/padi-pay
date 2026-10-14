@@ -19,7 +19,7 @@ export default function DashboardShell({ children }: DashboardShellProps) {
   }, [pathname]);
 
   return (
-    <div className="min-h-screen bg-gray-50/50 font-satoshi flex flex-col md:flex-row">
+    <div className="min-h-screen bg-gray-50/50 font-satoshi">
       {/* Mobile Sidebar (Drawer) */}
       <div
         className={`fixed inset-0 z-50 md:hidden transition-all duration-300 ${
@@ -46,19 +46,19 @@ export default function DashboardShell({ children }: DashboardShellProps) {
         </div>
       </div>
 
-      {/* Desktop Sidebar (Fixed Left) */}
-      <aside className="hidden md:flex md:w-64 flex-col fixed top-0 bottom-0 left-0 z-20 border-r border-[#E1E4EA] bg-white h-screen">
+      {/* Desktop Sidebar */}
+      <aside className="hidden md:flex md:w-64 flex-col fixed top-0 bottom-0 left-0 z-20 border-r border-[#E1E4EA] bg-white">
         <Sidebar onClose={() => {}} />
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col md:pl-64 min-h-screen">
+      <div className="min-w-0 md:ml-64">
         {/* Mobile Header */}
         <MobileHeader onMenuClick={() => setSidebarOpen(true)} />
 
-        {/* Dynamic page content */}
-        <main className="flex-1 p-6 md:p-8 lg:p-10">
-          <div className="max-w-7xl mx-auto">
+        {/* Dynamic Page Content */}
+        <main className="min-w-0 w-full p-4 sm:p-6 md:p-8 lg:p-10">
+          <div className="mx-auto w-full max-w-7xl min-w-0">
             {children}
           </div>
         </main>

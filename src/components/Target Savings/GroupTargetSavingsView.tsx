@@ -582,7 +582,9 @@ export default function GroupTargetSavingsView() {
       ];
 
       return values.some((value) =>
-        String(value ?? "").toLowerCase().includes(query),
+        String(value ?? "")
+          .toLowerCase()
+          .includes(query),
       );
     });
   }, [groups, searchQuery]);
@@ -648,9 +650,7 @@ export default function GroupTargetSavingsView() {
   };
 
   const nextPage = () => {
-    setPage((current) =>
-      Math.min(Math.max(meta.totalPages, 1), current + 1),
-    );
+    setPage((current) => Math.min(Math.max(meta.totalPages, 1), current + 1));
   };
 
   const closeDetails = () => setSelectedGroupId(null);
@@ -663,7 +663,7 @@ export default function GroupTargetSavingsView() {
   ---------------------------------------------------------------- */
 
   return (
-    <div className="relative space-y-6 font-satoshi">
+    <div className="relative min-w-0 w-full max-w-full space-y-6 overflow-x-clip font-satoshi">
       <style>{`
         @keyframes slideIn {
           from { transform: translateX(100%); opacity: 0.9; }
@@ -714,11 +714,11 @@ export default function GroupTargetSavingsView() {
 
       {/* SUMMARY CARDS */}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <SummaryCard
           label="Total Groups"
           value={summary.total.toLocaleString("en-NG")}
-          description="Groups on this page"
+          description="Matching groups across all pages"
           icon={<HiOutlineUsers size={19} />}
           iconClass="bg-[#68123D]/10 text-[#68123D]"
         />
@@ -726,7 +726,7 @@ export default function GroupTargetSavingsView() {
         <SummaryCard
           label="Active Groups"
           value={summary.active.toLocaleString("en-NG")}
-          description="Currently in progress"
+          description="Active groups"
           icon={<HiOutlineRefresh size={19} />}
           iconClass="bg-emerald-50 text-emerald-600"
         />
@@ -734,7 +734,7 @@ export default function GroupTargetSavingsView() {
         <SummaryCard
           label="Completed Groups"
           value={summary.completed.toLocaleString("en-NG")}
-          description="Savings goals reached"
+          description="Completed groups"
           icon={<HiOutlineCheckCircle size={19} />}
           iconClass="bg-blue-50 text-blue-600"
         />
@@ -742,7 +742,7 @@ export default function GroupTargetSavingsView() {
         <SummaryCard
           label="Total Saved"
           value={formatMoney(summary.balance)}
-          description="Current page balance"
+          description="Saved balance"
           icon={<HiOutlineCurrencyDollar size={19} />}
           iconClass="bg-amber-50 text-amber-600"
         />
@@ -781,8 +781,8 @@ export default function GroupTargetSavingsView() {
 
       {/* SEARCH AND FILTERS */}
 
-      <div className="flex flex-col items-center justify-between gap-4 rounded-2xl border border-white/60 bg-white/45 p-4 shadow-sm backdrop-blur-md sm:flex-row">
-        <div className="relative w-full sm:max-w-md sm:flex-1">
+      <div className="flex min-w-0 flex-col items-stretch justify-between gap-4 rounded-2xl border border-white/60 bg-white/45 p-3 shadow-sm backdrop-blur-md sm:flex-row sm:items-center sm:p-4">
+        <div className="relative w-full min-w-0 sm:max-w-md sm:flex-1">
           <HiOutlineSearch
             size={18}
             className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
@@ -797,7 +797,7 @@ export default function GroupTargetSavingsView() {
           />
         </div>
 
-        <div className="flex w-full flex-wrap items-center justify-between gap-3 sm:w-auto sm:justify-end">
+        <div className="flex w-full min-w-0 flex-wrap items-center justify-between gap-3 sm:w-auto sm:justify-end">
           <select
             value={statusFilter}
             onChange={(event) => handleStatus(event.target.value)}
@@ -869,7 +869,7 @@ export default function GroupTargetSavingsView() {
 
       {/* DESKTOP TABLE */}
 
-      <div className="hidden overflow-hidden rounded-2xl border border-white/70 bg-white/50 shadow-sm backdrop-blur-lg lg:block">
+      <div className="hidden min-w-0 max-w-full overflow-hidden rounded-2xl border border-white/70 bg-white/50 shadow-sm backdrop-blur-lg lg:block">
         <div className="flex items-center justify-between gap-3 border-b border-gray-100/50 px-6 py-4">
           <div>
             <h3 className="font-semibold text-[#181B25]">
@@ -891,8 +891,8 @@ export default function GroupTargetSavingsView() {
           <EmptyState text="No groups match your current search or filters." />
         ) : !isError ? (
           <>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[1100px] border-collapse text-left">
+            <div className="w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain">
+              <table className="w-full min-w-[1150px] border-collapse text-left">
                 <thead>
                   <tr className="border-b border-gray-100/50 bg-gray-50/30 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
                     <th className="px-5 py-4">Group</th>
@@ -1030,10 +1030,12 @@ export default function GroupTargetSavingsView() {
 
       {/* MOBILE AND TABLET CARDS */}
 
-      <div className="space-y-4 lg:hidden">
+      <div className="min-w-0 space-y-4 lg:hidden">
         <div className="flex items-center justify-between gap-3 px-1">
           <div>
-            <h3 className="font-semibold text-[#181B25]">Group Savings Plans</h3>
+            <h3 className="font-semibold text-[#181B25]">
+              Group Savings Plans
+            </h3>
             <p className="mt-1 text-xs text-gray-500">
               {meta.total.toLocaleString("en-NG")} total records
             </p>
@@ -1057,7 +1059,7 @@ export default function GroupTargetSavingsView() {
                 return (
                   <article
                     key={group.id}
-                    className="space-y-4 rounded-2xl border border-white/70 bg-white/60 p-5 shadow-sm backdrop-blur-md"
+                    className="space-y-4 min-w-0 max-w-full rounded-2xl border border-white/70 bg-white/60 p-5 shadow-sm backdrop-blur-md"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex min-w-0 items-center gap-3">
@@ -1143,10 +1145,7 @@ export default function GroupTargetSavingsView() {
                       </div>
 
                       <p className="mt-2 text-xs text-gray-500">
-                        {formatMoney(
-                          getRemainingAmount(group),
-                          group.currency,
-                        )}{" "}
+                        {formatMoney(getRemainingAmount(group), group.currency)}{" "}
                         remaining to reach target
                       </p>
                     </div>
@@ -1188,8 +1187,8 @@ export default function GroupTargetSavingsView() {
           <aside
             role="dialog"
             aria-modal="true"
-            aria-label="Group target savings details"
-            className="drawer-animate fixed bottom-4 right-4 top-4 z-50 flex w-[calc(100%-2rem)] flex-col overflow-hidden rounded-3xl border border-white/50 bg-white/95 text-sm text-[#181B25] shadow-[0_24px_60px_rgba(0,0,0,0.12)] backdrop-blur-2xl md:w-full md:max-w-2xl"
+            aria-label="Individual target savings details"
+            className="drawer-animate fixed inset-y-2 left-2 right-2 z-50 flex min-w-0 flex-col overflow-hidden rounded-2xl border border-white/50 bg-white/95 text-sm text-[#181B25] shadow-[0_24px_60px_rgba(0,0,0,0.12)] backdrop-blur-2xl sm:inset-y-4 sm:left-4 sm:right-4 sm:rounded-3xl md:left-auto md:right-4 md:w-full md:max-w-2xl"
           >
             {/* DRAWER HEADER */}
 
@@ -1353,10 +1352,7 @@ export default function GroupTargetSavingsView() {
                         label="Owner User ID"
                         value={selectedGroup.userId || "N/A"}
                       />
-                      <DetailItem
-                        label="Group ID"
-                        value={selectedGroup.id}
-                      />
+                      <DetailItem label="Group ID" value={selectedGroup.id} />
                     </div>
                   </DetailSection>
 

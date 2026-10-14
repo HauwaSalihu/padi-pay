@@ -2,10 +2,7 @@
 
 import React, { Suspense, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import {
-  HiOutlineUsers,
-  HiOutlineUser,
-} from "react-icons/hi";
+import { HiOutlineUsers, HiOutlineUser } from "react-icons/hi";
 
 import { PagePermissionGuard } from "@/components/AuthGuard";
 import GroupTargetSavingsView from "../../../components/Target Savings/GroupTargetSavingsView";
@@ -32,7 +29,6 @@ const TABS: {
     description: "Group Target Savings",
     icon: <HiOutlineUsers size={16} />,
   },
-  
 ];
 
 function TargetSavingsTabs() {
@@ -60,15 +56,15 @@ function TargetSavingsTabs() {
   };
 
   return (
-    <div className="relative space-y-8 font-satoshi">
+    <div className="relative min-w-0 w-full max-w-full space-y-6 overflow-x-clip font-satoshi">
       {/* HEADER AND TABS */}
-      <div className="flex flex-col gap-4 border-b border-gray-100/50 pb-5 md:flex-row md:items-center md:justify-between">
-        <div className="space-y-1.5">
-          <h1 className="text-3xl font-bold tracking-tight text-[#181B25]">
+      <div className="flex min-w-0 flex-col gap-4 border-b border-gray-100/50 pb-5 md:flex-row md:items-center md:justify-between">
+        <div className="min-w-0 flex-1 space-y-1.5">
+          <h1 className="break-words text-2xl font-bold tracking-tight text-[#181B25] sm:text-3xl">
             Target Savings
           </h1>
 
-          <p className="max-w-xl text-sm text-[#525866]/80">
+          <p className="max-w-xl text-sm leading-6 text-[#525866]/80">
             Manage group and individual target savings plans, contributions,
             balances, and savings progress.
           </p>
@@ -77,7 +73,7 @@ function TargetSavingsTabs() {
         <div
           role="tablist"
           aria-label="Target savings views"
-          className="inline-flex self-start items-center gap-1 rounded-2xl border border-white/60 bg-white/45 p-1 shadow-sm backdrop-blur-md md:self-auto"
+          className="grid w-full min-w-0 max-w-full grid-cols-2 gap-1 rounded-2xl border border-white/60 bg-white/45 p-1 shadow-sm backdrop-blur-md md:w-auto md:shrink-0"
         >
           {TABS.map((tab) => {
             const isActive = activeTab === tab.key;
@@ -90,18 +86,18 @@ function TargetSavingsTabs() {
                 aria-selected={isActive}
                 aria-controls={`target-savings-panel-${tab.key}`}
                 onClick={() => handleTabChange(tab.key)}
-                className={`inline-flex items-center gap-2 rounded-xl border-0 px-4 py-2.5 text-xs font-semibold transition-all sm:px-5 sm:text-sm ${
+                className={`flex min-w-0 items-center justify-center gap-2 rounded-xl px-2 py-2.5 text-xs font-semibold transition-colors sm:px-4 sm:text-sm ${
                   isActive
                     ? "bg-[#68123D] text-white shadow-sm"
                     : "text-[#525866] hover:bg-white/70"
                 }`}
               >
-                {tab.icon}
+                <span className="shrink-0">{tab.icon}</span>
 
-                <span className="flex flex-col items-start">
-                  <span>{tab.label}</span>
+                <span className="min-w-0 text-left">
+                  <span className="block">{tab.label}</span>
                   <span
-                    className={`text-[10px] font-normal ${
+                    className={`block truncate text-[10px] font-normal ${
                       isActive ? "text-white/75" : "text-gray-400"
                     }`}
                   >
@@ -116,6 +112,7 @@ function TargetSavingsTabs() {
 
       {/* ACTIVE TAB */}
       <div
+        className="min-w-0 w-full max-w-full"
         role="tabpanel"
         id={`target-savings-panel-${activeTab}`}
         aria-label={
