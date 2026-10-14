@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useMemo, useState } from "react";
@@ -21,18 +22,14 @@ import {
 import {
   useGetGroupTargetSavingsQuery,
   useGetGroupTargetSavingsDetailsQuery,
+  TargetSavingsStatus,
 } from "@/services/padiApi/adminApi";
 
 /* ================================================================
    TYPES
 ================================================================ */
 
-type SavingsStatus =
-  | "ACTIVE"
-  | "COMPLETED"
-  | "PAUSED"
-  | "CANCELLED"
-  | string;
+type SavingsStatus = TargetSavingsStatus;
 
 type StatusFilter = "ALL" | SavingsStatus;
 
@@ -133,7 +130,10 @@ const STATUS_STYLES: Record<string, string> = {
  * Example: 100000 kobo = ₦1,000.00.
  * Remove "/ 100" if your backend returns values already in naira.
  */
-const formatMoney = (value?: string | number | null, currency = "NGN") => {
+const formatMoney = (
+  value?: string | number | null,
+  currency = "NGN",
+) => {
   if (value === undefined || value === null || value === "") {
     return currency === "NGN" ? "₦0.00" : `${currency} 0.00`;
   }
@@ -176,7 +176,7 @@ const formatFrequency = (frequency?: string | null) => {
     .replace(/\b\w/g, (character) => character.toUpperCase());
 };
 
-const formatDate = (value?: string | null) => {
+const formatDate: any = (value?: string | null) => {
   if (!value) return "N/A";
 
   const date = new Date(value);
@@ -227,7 +227,8 @@ const getInitials = (user?: SavingsUser | null) => {
 };
 
 const getStatusClass = (status?: string | null) =>
-  STATUS_STYLES[status ?? ""] ?? "bg-gray-50 text-gray-600 border-gray-100";
+  STATUS_STYLES[status ?? ""] ??
+  "bg-gray-50 text-gray-600 border-gray-100";
 
 const getProgress = (group: GroupTargetSavings) => {
   const target = Number(group.targetAmount);
@@ -329,7 +330,9 @@ function DetailItem({
 
       <span
         className={`break-words text-sm ${
-          highlight ? "font-bold text-gray-950" : "font-semibold text-gray-800"
+          highlight
+            ? "font-bold text-gray-950"
+            : "font-semibold text-gray-800"
         }`}
       >
         {value || "N/A"}
@@ -507,30 +510,23 @@ export default function GroupTargetSavingsView() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
 
-  const [summaryByFilter, setSummaryByFilter] = useState<{
-    key: string;
-    summary: {
-      total: number;
-      active: number;
-      completed: number;
-      paused: number;
-      cancelled: number;
-      balance: number;
-      target: number;
-    };
-  } | null>(null);
-
   /* ---------------------------------------------------------------
      GROUP TARGET SAVINGS LIST
      Uses /admin-dashboard/group-target-savings
   ---------------------------------------------------------------- */
 
-  const { data, isLoading, isFetching, isError, error, refetch } =
-    useGetGroupTargetSavingsQuery({
-      page,
-      limit,
-      status: statusFilter === "ALL" ? undefined : statusFilter,
-    });
+  const {
+    data,
+    isLoading,
+    isFetching,
+    isError,
+    error,
+    refetch,
+  } = useGetGroupTargetSavingsQuery({
+    page,
+    limit,
+    status: statusFilter === "ALL" ? undefined : statusFilter,
+  });
 
   /* ---------------------------------------------------------------
      GROUP TARGET SAVINGS DETAILS
@@ -558,7 +554,7 @@ export default function GroupTargetSavingsView() {
     totalPages: 0,
   };
 
-  const selectedGroup = detailsResponse?.data as
+  const selectedGroup: any = detailsResponse?.data as
     | GroupTargetSavings
     | undefined;
 
@@ -594,29 +590,22 @@ export default function GroupTargetSavingsView() {
   }, [groups, searchQuery]);
 
   /* ---------------------------------------------------------------
-   SUMMARY
+     SUMMARY
+  ---------------------------------------------------------------- */
 
-   Keep summary values stable while moving between pages.
-   The record count comes from pagination metadata, which represents
-   the full filtered result set rather than only the current page.
-
-   NOTE: Balance and target totals can only be globally accurate if
-   the API provides aggregate totals or all matching records.
----------------------------------------------------------------- */
-
-  const summaryKey = statusFilter;
-
-  const pageSummary = useMemo(
+  const summary = useMemo(
     () =>
       groups.reduce(
         (result, group) => {
+          result.total += 1;
+
           if (group.status === "ACTIVE") result.active += 1;
           if (group.status === "COMPLETED") result.completed += 1;
           if (group.status === "PAUSED") result.paused += 1;
           if (group.status === "CANCELLED") result.cancelled += 1;
 
-          const balance = Number(group.balance ?? 0);
-          const target = Number(group.targetAmount ?? 0);
+          const balance = Number(group.balance);
+          const target = Number(group.targetAmount);
 
           if (Number.isFinite(balance)) result.balance += balance;
           if (Number.isFinite(target)) result.target += target;
@@ -624,6 +613,7 @@ export default function GroupTargetSavingsView() {
           return result;
         },
         {
+          total: 0,
           active: 0,
           completed: 0,
           paused: 0,
@@ -635,53 +625,12 @@ export default function GroupTargetSavingsView() {
     [groups],
   );
 
-  React.useEffect(() => {
-    setSummaryByFilter((current) => {
-      if (current?.key === summaryKey) return current;
-
-      return {
-        key: summaryKey,
-        summary: {
-          total: meta.total,
-          ...pageSummary,
-        },
-      };
-    });
-  }, [summaryKey, meta.total, pageSummary]);
-
-  const summary = {
-    total: meta.total,
-    active:
-      summaryByFilter?.key === summaryKey
-        ? summaryByFilter.summary.active
-        : pageSummary.active,
-    completed:
-      summaryByFilter?.key === summaryKey
-        ? summaryByFilter.summary.completed
-        : pageSummary.completed,
-    paused:
-      summaryByFilter?.key === summaryKey
-        ? summaryByFilter.summary.paused
-        : pageSummary.paused,
-    cancelled:
-      summaryByFilter?.key === summaryKey
-        ? summaryByFilter.summary.cancelled
-        : pageSummary.cancelled,
-    balance:
-      summaryByFilter?.key === summaryKey
-        ? summaryByFilter.summary.balance
-        : pageSummary.balance,
-    target:
-      summaryByFilter?.key === summaryKey
-        ? summaryByFilter.summary.target
-        : pageSummary.target,
-  };
-
   const overallProgress =
     summary.target > 0
       ? Math.min(100, Math.max(0, (summary.balance / summary.target) * 100))
       : 0;
 
+  // const selectedGroup: any = groups.find((group) => group.id === selectedGroupId);
   /* ---------------------------------------------------------------
      HANDLERS
   ---------------------------------------------------------------- */
@@ -959,7 +908,7 @@ export default function GroupTargetSavingsView() {
                 </thead>
 
                 <tbody className="divide-y divide-gray-100/30 text-sm">
-                  {filteredGroups.map((group) => {
+                  {filteredGroups.map((group: any) => {
                     const progress = getProgress(group);
 
                     return (
@@ -1044,7 +993,7 @@ export default function GroupTargetSavingsView() {
 
                         <td className="px-5 py-4">
                           <span className="whitespace-nowrap text-xs font-medium text-gray-700">
-                            {formatDate(group.completedAt)}
+                            {formatDate(group?.completedAt)}
                           </span>
                         </td>
 
@@ -1104,7 +1053,7 @@ export default function GroupTargetSavingsView() {
         ) : !isError ? (
           <>
             <div className="space-y-4">
-              {filteredGroups.map((group) => {
+              {filteredGroups.map((group: any) => {
                 const progress = getProgress(group);
 
                 return (
@@ -1174,9 +1123,7 @@ export default function GroupTargetSavingsView() {
                       />
                       <DetailItem
                         label="Members"
-                        value={String(
-                          group._count?.members ?? group.groupSize ?? 0,
-                        )}
+                        value={String(group._count?.members ?? group.groupSize ?? 0)}
                       />
                     </div>
 
@@ -1443,7 +1390,7 @@ export default function GroupTargetSavingsView() {
                       <EmptyState text="No group members were returned for this group." />
                     ) : (
                       <div className="space-y-3">
-                        {selectedGroup.members.map((member) => (
+                        {selectedGroup.members.map((member: any) => (
                           <div
                             key={member.id}
                             className="rounded-xl border border-gray-100 bg-white/70 p-4"
@@ -1471,16 +1418,17 @@ export default function GroupTargetSavingsView() {
                             </div>
 
                             <div className="mt-3 grid grid-cols-2 gap-3 border-t border-gray-100 pt-3">
-                              <DetailItem label="Member ID" value={member.id} />
+                              <DetailItem
+                                label="Member ID"
+                                value={member.id}
+                              />
                               <DetailItem
                                 label="Joined"
                                 value={formatDate(member.createdAt)}
                               />
                               <DetailItem
                                 label="Contributions"
-                                value={String(
-                                  member.contributions?.length ?? 0,
-                                )}
+                                value={String(member.contributions?.length ?? 0)}
                               />
                             </div>
 
@@ -1490,31 +1438,25 @@ export default function GroupTargetSavingsView() {
                                   Member Contributions
                                 </p>
 
-                                {member.contributions.map(
-                                  (contribution: any) => (
-                                    <div
-                                      key={contribution.id}
-                                      className="flex items-start justify-between gap-3 rounded-lg bg-gray-50 p-3"
-                                    >
-                                      <div className="min-w-0">
-                                        <p className="text-xs font-semibold text-gray-800">
-                                          {formatMoney(
-                                            contribution.amount,
-                                            selectedGroup.currency,
-                                          )}
-                                        </p>
-                                        <p className="mt-1 text-[10px] text-gray-500">
-                                          {formatDateTime(
-                                            contribution.createdAt,
-                                          )}
-                                        </p>
-                                      </div>
-                                      <StatusBadge
-                                        status={contribution.status}
-                                      />
+                                {member.contributions.map((contribution: any) => (
+                                  <div
+                                    key={contribution.id}
+                                    className="flex items-start justify-between gap-3 rounded-lg bg-gray-50 p-3"
+                                  >
+                                    <div className="min-w-0">
+                                      <p className="text-xs font-semibold text-gray-800">
+                                        {formatMoney(
+                                          contribution.amount,
+                                          selectedGroup.currency,
+                                        )}
+                                      </p>
+                                      <p className="mt-1 text-[10px] text-gray-500">
+                                        {formatDateTime(contribution.createdAt)}
+                                      </p>
                                     </div>
-                                  ),
-                                )}
+                                    <StatusBadge status={contribution.status} />
+                                  </div>
+                                ))}
                               </div>
                             )}
                           </div>
@@ -1536,7 +1478,7 @@ export default function GroupTargetSavingsView() {
                     ) : (
                       <div className="space-y-3">
                         {selectedGroup.groupMemberContributions.map(
-                          (contribution) => {
+                          (contribution: any) => {
                             const contributor =
                               contribution.user ??
                               contribution.groupTargetSavingsMember?.user;
@@ -1589,7 +1531,7 @@ export default function GroupTargetSavingsView() {
                     ) : (
                       <div className="space-y-3">
                         {selectedGroup.groupMemberApplications.map(
-                          (application) => (
+                          (application: any) => (
                             <div
                               key={application.id}
                               className="rounded-xl border border-gray-100 bg-white/70 p-4"
@@ -1603,8 +1545,7 @@ export default function GroupTargetSavingsView() {
                                     {application.user?.email || "No email"}
                                   </p>
                                   <p className="mt-1 text-xs text-gray-500">
-                                    Applied:{" "}
-                                    {formatDateTime(application.createdAt)}
+                                    Applied: {formatDateTime(application.createdAt)}
                                   </p>
                                 </div>
 
