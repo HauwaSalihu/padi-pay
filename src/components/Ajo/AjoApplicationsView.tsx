@@ -384,7 +384,7 @@ export default function AjoApplicationsView() {
                     </div>
                     <div>
                       <span className="text-gray-400 block font-medium mb-0.5">Target Amount</span>
-                      <span className="text-sm font-bold text-gray-900">{fmt(sel.ajo.targetAmount)}</span>
+                      <span className="text-sm font-bold text-gray-900">{fmt(sel.ajo.targetAmount/100)}</span>
                     </div>
                     <div>
                       <span className="text-gray-400 block font-medium mb-0.5">Group Size</span>
@@ -393,7 +393,7 @@ export default function AjoApplicationsView() {
                     <div>
                       <span className="text-gray-400 block font-medium mb-0.5">Contribution & Frequency</span>
                       <span className="text-sm font-semibold text-gray-800">
-                        {fmt(sel.contributionAmount || sel.ajo.contributionAmount)} / <span className="capitalize">{sel.ajo.frequency.toLowerCase()}</span>
+                        {fmt((sel.ajo.contributionAmount/100))} / <span className="capitalize">{sel.ajo.frequency.toLowerCase()}</span>
                       </span>
                     </div>
                     <div>
