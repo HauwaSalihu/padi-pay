@@ -25,7 +25,8 @@ __export(tags_handler_exports, {
   isAnyTagStaleOrExpired: () => isAnyTagStaleOrExpired,
   markTagsAsStaleAndPurgeEdgeCache: () => markTagsAsStaleAndPurgeEdgeCache,
   prefetchTagRevalidationMarker: () => prefetchTagRevalidationMarker,
-  purgeEdgeCache: () => purgeEdgeCache
+  purgeEdgeCache: () => purgeEdgeCache,
+  toCdnCacheTag: () => toCdnCacheTag
 });
 module.exports = __toCommonJS(tags_handler_exports);
 
@@ -101,12 +102,17 @@ var pipeline = (0, import_util.promisify)(import_stream.pipeline);
 
 // package.json
 var name = "@netlify/plugin-nextjs";
-var version = "5.16.2";
+var version = "5.16.5";
 
 // src/run/handlers/tags-handler.cts
 var import_storage = require("../storage/storage.cjs");
 var import_request_context = require("./request-context.cjs");
 var purgeCacheUserAgent = `${name}@${version}`;
+var OUT_OF_HEADER_SAFE_CLASS_CHAR = /[^\t -~]/;
+var OUT_OF_HEADER_SAFE_CLASS_RUN = /[^\t -~]+/g;
+function toCdnCacheTag(tag) {
+  return OUT_OF_HEADER_SAFE_CLASS_CHAR.test(tag) ? tag.replace(OUT_OF_HEADER_SAFE_CLASS_RUN, (run) => encodeURIComponent(run)) : tag;
+}
 var TAG_REVALIDATION_MARKER_KEY = "netlify:tags-revalidated";
 var MARKER_SEEN = /* @__PURE__ */ Symbol.for("nf-tag-revalidation-marker-seen");
 var extendedGlobalThis = globalThis;
@@ -263,7 +269,7 @@ async function doRevalidateTagAndPurgeEdgeCache(tags, durations) {
       }
     })
   ]);
-  await purgeEdgeCache(tags);
+  await purgeEdgeCache(tags.map(toCdnCacheTag));
 }
 function markTagsAsStaleAndPurgeEdgeCache(tagOrTags, durations) {
   const tags = getCacheTagsFromTagOrTags(tagOrTags);
@@ -293,5 +299,6 @@ function markTagsAsStaleAndPurgeEdgeCache(tagOrTags, durations) {
   isAnyTagStaleOrExpired,
   markTagsAsStaleAndPurgeEdgeCache,
   prefetchTagRevalidationMarker,
-  purgeEdgeCache
+  purgeEdgeCache,
+  toCdnCacheTag
 });

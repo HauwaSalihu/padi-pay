@@ -277,6 +277,7 @@ var replaceMiddlewareManifest = async (sourcePath, destPath) => {
   await writeFile(destPath, newData);
 };
 var replaceFunctionsConfigManifest = async (sourcePath, destPath) => {
+  await mkdir(dirname(destPath), { recursive: true });
   const data = await readFile(sourcePath, "utf8");
   const manifest = JSON.parse(data);
   if (manifest?.functions?.["/_middleware"]?.matchers) {

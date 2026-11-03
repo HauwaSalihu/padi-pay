@@ -60,7 +60,7 @@ function withActiveSpan(tracer, name, optionsOrFn, contextOrFn, fn) {
   return tracer.withActiveSpan(name, optionsOrFn, contextOrFn, func);
 }
 
-// node_modules/@netlify/blobs/dist/chunk-QDL6ESI2.js
+// node_modules/@netlify/blobs/dist/chunk-SQCJ2S3G.js
 var getEnvironmentContext = () => {
   const context = globalThis.netlifyBlobsContext || getEnvironment().get("NETLIFY_BLOBS_CONTEXT");
   if (typeof context !== "string" || !context) {
@@ -156,6 +156,10 @@ var createBlobsInternalError = async (res, context = {}) => {
   const responseBody = await res.clone().text().catch(() => void 0);
   return new BlobsInternalError(res, context, responseBody);
 };
+var discardBody = async (res) => {
+  await res.body?.cancel().catch(() => {
+  });
+};
 var collectIterator = async (iterator) => {
   const result = [];
   for await (const item of iterator) {
@@ -203,6 +207,7 @@ var fetchAndRetry = async (fetch, url, options, attemptsLeft = MAX_RETRY, getRet
     const res = await fetch(url, options);
     const isRetryable = res.status === 429 || res.status >= 500 || getRetryUrl !== void 0 && res.status === 403;
     if (attemptsLeft > 0 && isRetryable) {
+      await discardBody(res);
       const delay = getDelay(res.headers.get(RATE_LIMIT_HEADER));
       await sleep(delay);
       const retryUrl = getRetryUrl ? await getRetryUrl() : url;
@@ -405,6 +410,7 @@ var getClientOptions = (options, contextOverride) => {
 var LEGACY_STORE_INTERNAL_PREFIX = "netlify-internal/legacy-namespace/";
 var STATUS_OK = 200;
 var STATUS_PRE_CONDITION_FAILED = 412;
+var STATUS_CONFLICT = 409;
 var Store = class _Store {
   constructor(options) {
     this.client = options.client;
@@ -426,6 +432,7 @@ var Store = class _Store {
   }
   async delete(key) {
     const res = await this.client.makeRequest({ key, method: "delete", storeName: this.name });
+    await discardBody(res);
     if (![200, 204, 404].includes(res.status)) {
       throw new BlobsInternalError(res, {
         edgeAccess: this.client.edgeAccess,
@@ -440,6 +447,7 @@ var Store = class _Store {
     while (hasMore) {
       const res = await this.client.makeRequest({ method: "delete", storeName: this.name });
       if (res.status !== 200) {
+        await discardBody(res);
         throw new BlobsInternalError(res, {
           edgeAccess: this.client.edgeAccess,
           method: "delete",
@@ -478,9 +486,11 @@ var Store = class _Store {
         "blobs.response.status": res.status
       });
       if (res.status === 404) {
+        await discardBody(res);
         return null;
       }
       if (res.status !== 200) {
+        await discardBody(res);
         throw new BlobsInternalError(res);
       }
       if (type === void 0 || type === "text") {
@@ -498,6 +508,7 @@ var Store = class _Store {
       if (type === "stream") {
         return res.body;
       }
+      await discardBody(res);
       throw new BlobsInternalError(res);
     });
   }
@@ -559,9 +570,11 @@ var Store = class _Store {
         "blobs.response.status": res.status
       });
       if (res.status === 404) {
+        await discardBody(res);
         return null;
       }
       if (res.status !== 200 && res.status !== 304) {
+        await discardBody(res);
         throw new BlobsInternalError(res);
       }
       const metadata = getMetadataFromResponse(res);
@@ -587,6 +600,7 @@ var Store = class _Store {
       if (type === "stream") {
         return { data: res.body, ...result };
       }
+      await discardBody(res);
       throw new Error(`Invalid 'type' property: ${type}. Expected: arrayBuffer, blob, json, stream, or text.`);
     });
   }
@@ -638,9 +652,22 @@ var Store = class _Store {
         "blobs.response.status": res.status
       });
       if (conditions) {
-        return res.status === STATUS_PRE_CONDITION_FAILED ? { modified: false } : { etag, modified: true };
+        if (res.status === STATUS_PRE_CONDITION_FAILED || res.status === STATUS_CONFLICT) {
+          await discardBody(res);
+          return { modified: false };
+        }
+        if (res.ok) {
+          await discardBody(res);
+          return { etag, modified: true };
+        }
+        throw await createBlobsInternalError(res, {
+          edgeAccess: this.client.edgeAccess,
+          method: "put",
+          storeName: this.name
+        });
       }
       if (res.status === STATUS_OK) {
+        await discardBody(res);
         return {
           etag,
           modified: true
@@ -683,15 +710,28 @@ var Store = class _Store {
         "blobs.response.status": res.status
       });
       if (conditions) {
-        return res.status === STATUS_PRE_CONDITION_FAILED ? { modified: false } : { etag, modified: true };
+        if (res.status === STATUS_PRE_CONDITION_FAILED || res.status === STATUS_CONFLICT) {
+          await discardBody(res);
+          return { modified: false };
+        }
+        if (res.ok) {
+          await discardBody(res);
+          return { etag, modified: true };
+        }
+        throw await createBlobsInternalError(res, {
+          edgeAccess: this.client.edgeAccess,
+          method: "put",
+          storeName: this.name
+        });
       }
       if (res.status === STATUS_OK) {
+        await discardBody(res);
         return {
           etag,
           modified: true
         };
       }
-      throw new BlobsInternalError(res, {
+      throw await createBlobsInternalError(res, {
         edgeAccess: this.client.edgeAccess,
         method: "put",
         storeName: this.name
@@ -801,9 +841,11 @@ var Store = class _Store {
               let blobs = [];
               let directories = [];
               if (![200, 204, 404].includes(res.status)) {
+                await discardBody(res);
                 throw new BlobsInternalError(res);
               }
               if (res.status === 404) {
+                await discardBody(res);
                 done = true;
               } else {
                 const page = await res.json();

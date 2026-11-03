@@ -47,7 +47,7 @@ var import_tracer = require("./tracer.cjs");
 var memoizedPrerenderManifest;
 var getPagesRouterImplicitTag = (key) => {
   const pathname = (0, import_route_cache_key.routeCacheKeyToPathname)(key);
-  return `_N_T_${pathname === "/index" ? "/" : encodeURI(pathname)}`;
+  return (0, import_tags_handler.toCdnCacheTag)(`_N_T_${pathname === "/index" ? "/" : pathname}`);
 };
 var NetlifyCacheHandler = class {
   options;
@@ -119,7 +119,7 @@ var NetlifyCacheHandler = class {
     }
     if (cacheValue.kind === "PAGE" || cacheValue.kind === "PAGES" || cacheValue.kind === "REDIRECT" || cacheValue.kind === "APP_PAGE" || cacheValue.kind === "ROUTE" || cacheValue.kind === "APP_ROUTE") {
       if (cacheValue.kind !== "REDIRECT" && cacheValue.headers?.[import_constants.NEXT_CACHE_TAGS_HEADER]) {
-        const cacheTags = cacheValue.headers[import_constants.NEXT_CACHE_TAGS_HEADER].split(/,|%2c/gi).map(encodeURI);
+        const cacheTags = cacheValue.headers[import_constants.NEXT_CACHE_TAGS_HEADER].split(/,|%2c/gi).map(import_tags_handler.toCdnCacheTag);
         requestContext.responseCacheTags = cacheTags;
       } else if ((cacheValue.kind === "PAGE" || cacheValue.kind === "PAGES") && typeof cacheValue.pageData === "object" || cacheValue.kind === "REDIRECT" && typeof cacheValue.props === "object") {
         const cacheTags = [getPagesRouterImplicitTag(key)];
@@ -220,6 +220,19 @@ var NetlifyCacheHandler = class {
       );
       if (expiredByTags) {
         span?.addEvent("Expired", { expiredByTags, key, ttl });
+        return null;
+      }
+      if ((0, import_request_context.getRequestContext)()?.isBackgroundRevalidation && staleByTags) {
+        span?.addEvent("Discarding tag-stale entry due to SWR background revalidation request", {
+          key,
+          ttl
+        });
+        (0, import_request_context.getLogger)().withFields({
+          ttl,
+          key
+        }).debug(
+          `[NetlifyCacheHandler.get] Discarding tag-stale entry due to SWR background revalidation request: ${key}`
+        );
         return null;
       }
       this.captureResponseCacheLastModified(blob, key, span);
