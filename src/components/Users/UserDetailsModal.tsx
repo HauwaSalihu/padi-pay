@@ -14,7 +14,10 @@ import {
   HiOutlineUsers,
   HiOutlineCurrencyDollar,
 } from "react-icons/hi";
-import { useGetUserDetailsQuery } from "@/services/padiApi/userApi";
+import {
+  useGetUserDetailsQuery,
+  useToggleWalletStatusMutation,
+} from "@/services/padiApi/userApi";
 import UserLedgerModal from "./UserLedgerModal";
 import UserSavingsModal from "./UserSavingsModal";
 
@@ -26,9 +29,12 @@ interface UserDetailsModalProps {
 export default function UserDetailsModal({ userId, onClose }: UserDetailsModalProps) {
   const [isLedgerOpen, setIsLedgerOpen] = useState(false);
   const [isSavingsOpen, setIsSavingsOpen] = useState(false);
+  const [walletToggleError, setWalletToggleError] = useState<string | null>(null);
   const { data: user, isLoading, isError, refetch } = useGetUserDetailsQuery(userId!, {
     skip: !userId,
   });
+  const [toggleWalletStatus, { isLoading: isTogglingWallet }] =
+    useToggleWalletStatusMutation();
   if (!userId) return null;
 
   const fullName = user
@@ -41,6 +47,24 @@ export default function UserDetailsModal({ userId, onClose }: UserDetailsModalPr
     ? `${(user.names.first_name || "").charAt(0)}${(user.names.last_name || "").charAt(0)}`.toUpperCase() ||
       "U"
     : "U";
+
+  const walletActive = user?.wallet?.isActive === true;
+
+  const handleToggleWalletStatus = async () => {
+    if (!userId || !user?.wallet?.id || isTogglingWallet) return;
+    setWalletToggleError(null);
+    try {
+      // The endpoint flips the flag server-side; invalidating 'User' refetches
+      // the details query, so the badge and toggle re-render from the truth.
+      await toggleWalletStatus({ userId, walletId: user.wallet.id }).unwrap();
+    } catch (err: any) {
+      console.error("Failed to toggle wallet status:", err);
+      setWalletToggleError(
+        err?.data?.message ||
+          "Failed to update wallet status. Please try again.",
+      );
+    }
+  };
 
   const fmtDate = (date?: string | null) => {
     if (!date) return "N/A";
@@ -167,6 +191,43 @@ export default function UserDetailsModal({ userId, onClose }: UserDetailsModalPr
                     <span className="text-xl font-bold text-[#68123D] mt-0.5 block">
                       {formatCurrency(user.wallet?.balance)}
                     </span>
+                    {user.wallet?.id && (
+                      <div className="flex items-center gap-2 mt-2">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                            walletActive
+                              ? "bg-emerald-50/70 text-emerald-700 border-emerald-100/70"
+                              : "bg-amber-50/70 text-amber-700 border-amber-100/70"
+                          }`}
+                        >
+                          {walletActive ? "Active" : "Inactive"}
+                        </span>
+                        <label
+                          className={`relative inline-flex items-center ${
+                            isTogglingWallet
+                              ? "opacity-60 cursor-wait"
+                              : "cursor-pointer"
+                          }`}
+                          title={`${walletActive ? "Deactivate" : "Activate"} wallet`}
+                          aria-label="Toggle wallet status"
+                        >
+                          <input
+                            type="checkbox"
+                            className="sr-only peer"
+                            checked={walletActive}
+                            onChange={handleToggleWalletStatus}
+                            disabled={!user.wallet?.id || isTogglingWallet}
+                          />
+                          <div className="relative w-9 h-5 bg-gray-200 peer-checked:bg-[#68123D] rounded-full transition-all duration-200 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:h-4 after:w-4 after:rounded-full after:bg-white after:shadow-sm after:transition-all after:duration-200 peer-checked:after:translate-x-4" />
+                        </label>
+                        <span className="text-[10px] text-gray-400 font-medium">Wallet status</span>
+                      </div>
+                    )}
+                    {walletToggleError && (
+                      <div className="text-[10px] text-red-500 font-medium mt-1">
+                        {walletToggleError}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="flex flex-col gap-2 shrink-0">

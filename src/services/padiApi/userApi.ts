@@ -66,6 +66,7 @@ export interface UserDetails {
   wallet?: {
     balance: number;
     id?: string | null;
+    isActive?: boolean | null;
   };
 }
 
@@ -74,6 +75,17 @@ export interface AdminStatusResponse {
   adminRole?: string;
   permissions?: string[];
   pageKeys?: string[];
+}
+
+export interface ToggleWalletStatusRequest {
+  userId: string;
+  walletId: string;
+}
+
+export interface ToggleWalletStatusResponse {
+  walletId: string;
+  userId: string;
+  isActive: boolean;
 }
 
 export const userApi = baseApi.injectEndpoints({
@@ -94,6 +106,16 @@ export const userApi = baseApi.injectEndpoints({
       query: () => '/auth/admin-status',
       providesTags: ['User'],
     }),
+    toggleWalletStatus: builder.mutation<
+      ToggleWalletStatusResponse,
+      ToggleWalletStatusRequest
+    >({
+      query: ({ userId, walletId }) => ({
+        url: `/admin-dashboard/users/${userId}/wallets/${walletId}/toggle-active`,
+        method: 'PATCH',
+      }),
+      invalidatesTags: ['User'],
+    }),
   }),
 });
 
@@ -102,4 +124,5 @@ export const {
   useGetMeQuery,
   useGetUserDetailsQuery,
   useGetAdminStatusQuery,
+  useToggleWalletStatusMutation,
 } = userApi;
