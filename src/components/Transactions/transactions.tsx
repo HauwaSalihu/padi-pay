@@ -9,16 +9,58 @@ import {
   HiOutlineSearch,
   HiOutlineX,
 } from "react-icons/hi";
-import { useGetLedgerEntriesQuery } from "@/services/padiApi/adminApi";
+import {
+  useGetLedgerEntriesQuery,
+  useGetTransactionsPauseQuery,
+  useSetTransactionsPauseMutation,
+} from "@/services/padiApi/adminApi";
 
 export default function TransactionsList() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
+  const [confirmPause, setConfirmPause] = useState(false);
+  const [pauseError, setPauseError] = useState<string | null>(null);
 
   const { data, isLoading, isError, refetch } = useGetLedgerEntriesQuery({
     page,
     limit,
   });
+
+  const {
+    data: pauseStatus,
+    isLoading: isPauseLoading,
+  } = useGetTransactionsPauseQuery();
+  const [setTransactionsPause, { isLoading: isSavingPause }] =
+    useSetTransactionsPauseMutation();
+
+  const outboundPaused = pauseStatus?.paused === true;
+  const outboundEnabled = !outboundPaused;
+
+  const applyOutboundState = async (enabled: boolean) => {
+    setPauseError(null);
+    try {
+      // Send the explicit end state, not a flip, so retries are idempotent.
+      // Invalidating the 'Settings' tag refetches the pause status.
+      await setTransactionsPause({ paused: !enabled }).unwrap();
+      setConfirmPause(false);
+    } catch (err: any) {
+      console.error("Failed to update outbound transactions pause:", err);
+      setPauseError(
+        err?.data?.message ||
+          "Failed to update platform transaction status. Please try again.",
+      );
+    }
+  };
+
+  const handleOutboundToggle = () => {
+    if (isSavingPause || isPauseLoading) return;
+    if (outboundEnabled) {
+      // Turning it off halts every user's outbound transactions - confirm first.
+      setConfirmPause(true);
+    } else {
+      applyOutboundState(true);
+    }
+  };
 
   const entries = data?.data || [];
   const meta = data?.meta || {
@@ -80,11 +122,83 @@ export default function TransactionsList() {
   return (
     <div className="space-y-6 font-satoshi">
       {/* Title Divider */}
-      <div className="border-b border-gray-100 pb-3">
-        <h2 className="text-xl font-bold text-[#181B25]">All System Transactions</h2>
-        <p className="text-xs text-[#8A94A6] mt-0.5">
-          Detailed overview of platform-wide cashflows, user top-ups, and ledger charges.
-        </p>
+      <div className="border-b border-gray-100 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-bold text-[#181B25]">All System Transactions</h2>
+          <p className="text-xs text-[#8A94A6] mt-0.5">
+            Detailed overview of platform-wide cashflows, user top-ups, and ledger charges.
+          </p>
+        </div>
+
+        {/* Platform-wide outbound pause */}
+        <div className="flex flex-col items-start sm:items-end gap-1.5 shrink-0">
+          <div className="flex items-center gap-2.5">
+            <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+              Outbound transactions
+            </span>
+            <span
+              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${
+                isPauseLoading
+                  ? "bg-gray-50/70 text-gray-500 border-gray-200/70"
+                  : outboundPaused
+                    ? "bg-amber-50/70 text-amber-700 border-amber-100/70"
+                    : "bg-emerald-50/70 text-emerald-700 border-emerald-100/70"
+              }`}
+            >
+              {isPauseLoading ? "Loading..." : outboundPaused ? "Paused" : "Active"}
+            </span>
+            <label
+              className={`relative inline-flex items-center ${
+                isSavingPause || isPauseLoading
+                  ? "opacity-60 cursor-wait"
+                  : "cursor-pointer"
+              }`}
+              title={
+                outboundEnabled
+                  ? "Pause outbound transactions for all users"
+                  : "Resume outbound transactions for all users"
+              }
+              aria-label="Toggle platform outbound transactions"
+            >
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={outboundEnabled}
+                onChange={handleOutboundToggle}
+                disabled={isPauseLoading || isSavingPause}
+              />
+              <div className="relative w-9 h-5 bg-gray-200 peer-checked:bg-[#68123D] rounded-full transition-all duration-200 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:h-4 after:w-4 after:rounded-full after:bg-white after:shadow-sm after:transition-all after:duration-200 peer-checked:after:translate-x-4" />
+            </label>
+          </div>
+
+          {confirmPause && (
+            <div className="flex items-center gap-2 bg-amber-50/70 border border-amber-100/70 rounded-xl px-2.5 py-1.5">
+              <span className="text-[10px] font-medium text-amber-800">
+                Pause outbound transactions for every user?
+              </span>
+              <button
+                onClick={() => applyOutboundState(false)}
+                disabled={isSavingPause}
+                className="text-[10px] font-semibold text-white bg-amber-600 hover:bg-amber-700 px-2 py-1 rounded-lg transition-all cursor-pointer border-0 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSavingPause ? "Pausing..." : "Pause"}
+              </button>
+              <button
+                onClick={() => setConfirmPause(false)}
+                disabled={isSavingPause}
+                className="text-[10px] font-semibold text-gray-500 hover:text-gray-700 px-1.5 py-1 rounded-lg transition-all cursor-pointer border-0 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+
+          {pauseError && (
+            <span className="text-[10px] text-red-500 font-medium">
+              {pauseError}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Configurations */}

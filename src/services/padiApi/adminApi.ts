@@ -1,5 +1,11 @@
 import { baseApi } from "./baseApi";
 
+export interface TransactionsPauseStatus {
+  paused: boolean;
+  updatedAt: string | null;
+  updatedBy: string | null;
+}
+
 export interface AjoGroup {
   id: string;
   name: string;
@@ -916,6 +922,25 @@ export const adminApi = baseApi.injectEndpoints({
       query: ({ page = 1, limit = 10 }) =>
         `/admin-dashboard/spend-and-save?page=${page}&limit=${limit}`,
     }),
+
+    getTransactionsPause: builder.query<TransactionsPauseStatus, void>({
+      query: () => ({
+        url: "/admin-dashboard/settings/transactions-pause",
+        method: "GET",
+      }),
+      providesTags: ["Settings"],
+    }),
+    setTransactionsPause: builder.mutation<
+      TransactionsPauseStatus,
+      { paused: boolean }
+    >({
+      query: ({ paused }) => ({
+        url: "/admin-dashboard/settings/transactions-pause",
+        method: "PATCH",
+        body: { paused },
+      }),
+      invalidatesTags: ["Settings"],
+    }),
   }),
 });
 
@@ -943,4 +968,6 @@ export const {
   useGetGroupTargetSavingsDetailsQuery,
   useGetSpendAndSaveQuery,
   useGetUserSavingsQuery,
+  useGetTransactionsPauseQuery,
+  useSetTransactionsPauseMutation,
 } = adminApi;
