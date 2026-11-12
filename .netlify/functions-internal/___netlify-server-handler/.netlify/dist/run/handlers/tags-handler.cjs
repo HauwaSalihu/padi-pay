@@ -102,7 +102,7 @@ var pipeline = (0, import_util.promisify)(import_stream.pipeline);
 
 // package.json
 var name = "@netlify/plugin-nextjs";
-var version = "5.16.5";
+var version = "5.16.6";
 
 // src/run/handlers/tags-handler.cts
 var import_storage = require("../storage/storage.cjs");

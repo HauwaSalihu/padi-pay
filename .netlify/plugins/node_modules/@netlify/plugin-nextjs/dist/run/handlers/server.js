@@ -3190,6 +3190,7 @@ var server_default = async (request, _context, topLevelSpan, requestContext) => 
       resProxy.end("Internal Server Error");
     });
     const response = await toComputeResponse(resProxy);
+    response.headers.delete("x-middleware-set-cookie");
     if (requestContext.responseCacheKey) {
       topLevelSpan?.setAttribute("responseCacheKey", requestContext.responseCacheKey);
     }
